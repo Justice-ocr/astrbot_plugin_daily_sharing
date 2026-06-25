@@ -10,124 +10,6 @@ from astrbot.api import logger
 
 
 class ImageProviderManager:
-    IMAGE_PLUGIN_KEYWORDS = (
-        "image",
-        "img",
-        "draw",
-        "paint",
-        "photo",
-        "picture",
-        "sd",
-        "flux",
-        "dalle",
-        "gitee_aiimg",
-        "aiimg",
-        "生图",
-        "绘图",
-        "画图",
-        "图片",
-    )
-    IMAGE_METHOD_KEYWORDS = (
-        "generate_image",
-        "draw_image",
-        "txt2img",
-        "text2img",
-        "t2i",
-        "create_image",
-        "make_image",
-        "generate",
-        "draw",
-        "paint",
-    )
-    IMAGE_EDIT_METHOD_KEYWORDS = (
-        "edit_image",
-        "image_to_image",
-        "img2img",
-        "i2i",
-        "generate_selfie",
-        "selfie",
-        "take_selfie",
-        "selfie_image",
-        "generate_portrait",
-        "portrait",
-        "persona_image",
-        "persona",
-        "generate_with_ref",
-        "generate_with_reference",
-        "draw_with_ref",
-        "reference_image",
-        "with_reference",
-        "edit",
-    )
-    IMAGE_SELFIE_PRIORITY_KEYWORDS = (
-        "selfie",
-        "persona",
-        "portrait",
-        "reference",
-        "with_ref",
-        "with_reference",
-    )
-    IMAGE_EDIT_CHILD_ATTRS = (
-        "selfie",
-        "selfies",
-        "portrait",
-        "persona",
-        "personas",
-        "ref",
-        "refs",
-    )
-    VIDEO_PLUGIN_KEYWORDS = (
-        "video",
-        "i2v",
-        "image_to_video",
-        "grok",
-        "可灵",
-        "视频",
-    )
-    VIDEO_METHOD_KEYWORDS = (
-        "generate_video",
-        "image_to_video",
-        "img2video",
-        "i2v",
-        "create_video",
-        "make_video",
-        "generate_video_url",
-        "video",
-    )
-    TTS_PLUGIN_KEYWORDS = (
-        "tts",
-        "voice",
-        "audio",
-        "speech",
-        "语音",
-        "音频",
-        "朗读",
-    )
-    TTS_METHOD_KEYWORDS = (
-        "text_to_speech",
-        "tts",
-        "synthesize",
-        "synthesise",
-        "generate_audio",
-        "generate_voice",
-        "create_audio",
-        "make_audio",
-        "process",
-    )
-    GENERIC_METHOD_NAMES = {"generate", "draw", "paint"}
-    GENERIC_VIDEO_METHOD_NAMES = {"video"}
-    GENERIC_TTS_METHOD_NAMES = {"process"}
-    TEXT_RENDER_METHOD_KEYWORDS = (
-        "text_to_image",
-        "text2image",
-        "markdown_to_image",
-        "html_to_image",
-        "render_text",
-        "render_markdown",
-        "render_html",
-        "text_renderer",
-        "markdown_renderer",
-    )
     PROMPT_ARG_NAMES = ("prompt", "text", "query", "description", "positive_prompt")
     IMAGE_ARG_NAMES = ("images", "image", "ref_images", "reference_images", "init_images", "input_images")
     IMAGE_PATH_ARG_NAMES = ("image_path", "path", "file_path", "input_path", "source_image")
@@ -139,25 +21,6 @@ class ImageProviderManager:
     SESSION_ARG_NAMES = ("session", "session_id", "target_umo", "umo")
     TTS_SESSION_ARG_NAMES = SESSION_ARG_NAMES
     MODE_ARG_NAMES = ("mode", "task_type", "task", "type")
-    COMMON_CHILD_ATTRS = (
-        "draw",
-        "edit",
-        "image",
-        "images",
-        "img",
-        "video",
-        "videos",
-        "voice",
-        "audio",
-        "tts",
-        "speech",
-        "service",
-        "generator",
-        "client",
-        "api",
-        "backend",
-        "model",
-    )
     RESULT_FIELDS = (
         "path",
         "file",
@@ -198,12 +61,21 @@ class ImageProviderManager:
         "result",
         "data",
     )
+    CALIBRATED_TOOL_BLOCKLIST = {
+        "send_message_to_user",
+        "daily_share",
+        "news_link",
+    }
+    CALIBRATED_TOOL_BLOCKED_PARTS = (
+        "send_message",
+        "message_to_user",
+        "daily_share",
+        "news_link",
+    )
 
     def __init__(self, context, image_conf: dict):
         self.context = context
         self.image_conf = image_conf
-        self._gitee_plugin = None
-        self._gitee_plugin_not_found = False
         self._last_external_deliveries = {}
 
     def reset_last_external_delivery(self, media_type: str = None) -> None:
@@ -282,17 +154,6 @@ class ImageProviderManager:
                 if plugin_name_lower == name_lower or plugin_name_lower in name_lower:
                     return getattr(star, "star_cls", None)
         return None
-
-    def _ensure_gitee_plugin(self):
-        if self._gitee_plugin or self._gitee_plugin_not_found:
-            return
-        self._gitee_plugin = self._find_star("astrbot_plugin_gitee_aiimg")
-        if not self._gitee_plugin:
-            self._gitee_plugin_not_found = True
-
-    def get_gitee_plugin(self):
-        self._ensure_gitee_plugin()
-        return self._gitee_plugin
 
     def _resolve_method(self, target: Any, method_path: str):
         current = target
@@ -393,209 +254,6 @@ class ImageProviderManager:
                 continue
             required.append(param.name)
         return required
-
-    def _method_accepts_prompt(self, method, prompt_arg: str) -> bool:
-        try:
-            sig = inspect.signature(method)
-        except (TypeError, ValueError):
-            return True
-
-        params = list(sig.parameters.values())
-        if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in params):
-            return True
-
-        names = {
-            param.name
-            for param in params
-            if param.kind
-            in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
-        }
-        return prompt_arg in names
-
-    def _select_prompt_arg(self, method) -> Optional[str]:
-        required = self._method_required_params(method)
-        for name in self.PROMPT_ARG_NAMES:
-            if name in required or self._method_accepts_prompt(method, name):
-                return name
-        return None
-
-    def _can_call_with_prompt(self, method, prompt_arg: str) -> bool:
-        required = self._method_required_params(method)
-        extra_args = self._read_extra_args()
-        available = set(extra_args.keys())
-        if prompt_arg:
-            available.add(prompt_arg)
-        return all(name in available for name in required)
-
-    def _iter_named_candidate_methods(
-        self,
-        method_keywords: tuple[str, ...],
-        plugin_keywords: tuple[str, ...],
-        generic_method_names: set[str],
-        *,
-        require_prompt: bool = True,
-        extra_child_attrs: tuple[str, ...] = (),
-        allow_selfie_child_generate: bool = False,
-    ):
-        seen = set()
-        for star in self._iter_stars():
-            if self._is_daily_sharing_star(star):
-                continue
-            plugin = getattr(star, "star_cls", None)
-            if not plugin:
-                continue
-            plugin_text = " ".join(self._star_names(star)).lower()
-            plugin_looks_media = any(keyword in plugin_text for keyword in plugin_keywords)
-
-            roots = [("", plugin)]
-            for attr in self.COMMON_CHILD_ATTRS + extra_child_attrs:
-                try:
-                    child = getattr(plugin, attr, None)
-                except Exception:
-                    child = None
-                if child is not None:
-                    roots.append((attr, child))
-
-            for prefix, obj in roots:
-                prefix_text = prefix.lower()
-                root_looks_media = any(keyword in prefix_text for keyword in plugin_keywords)
-                attr_names = set(method_keywords)
-                try:
-                    attr_names.update(name for name in dir(obj) if not name.startswith("_"))
-                except Exception:
-                    pass
-
-                for attr in attr_names:
-                    attr_lower = attr.lower()
-                    if any(keyword in attr_lower for keyword in self.TEXT_RENDER_METHOD_KEYWORDS):
-                        continue
-                    method_matches = any(keyword in attr_lower for keyword in method_keywords)
-                    selfie_root_matches = (
-                        allow_selfie_child_generate
-                        and
-                        any(keyword in prefix_text for keyword in self.IMAGE_SELFIE_PRIORITY_KEYWORDS)
-                        and attr_lower in {"generate", "draw", "create", "make", "process"}
-                    )
-                    if not (method_matches or selfie_root_matches):
-                        continue
-                    method_looks_specific = attr_lower not in generic_method_names
-                    if not (method_looks_specific or plugin_looks_media or root_looks_media):
-                        continue
-                    try:
-                        method = getattr(obj, attr, None)
-                    except Exception:
-                        continue
-                    if not callable(method):
-                        continue
-
-                    method_path = f"{prefix}.{attr}" if prefix else attr
-                    dedupe_key = (id(plugin), method_path)
-                    if dedupe_key in seen:
-                        continue
-                    seen.add(dedupe_key)
-
-                    prompt_arg = self._select_prompt_arg(method) if require_prompt else None
-                    if require_prompt and not prompt_arg:
-                        continue
-
-                    score = 0
-                    if plugin_looks_media:
-                        score += 20
-                    if root_looks_media:
-                        score += 10
-                    if method_path in {"draw.generate", "generate_image", "draw_image", "txt2img"}:
-                        score += 10
-                    if method_looks_specific:
-                        score += 5
-                    if any(keyword in attr_lower or keyword in prefix_text for keyword in self.IMAGE_SELFIE_PRIORITY_KEYWORDS):
-                        score += 15
-
-                    yield {
-                        "score": score,
-                        "star": star,
-                        "method": method,
-                        "method_path": method_path,
-                        "prompt_arg": prompt_arg,
-                    }
-
-    def _iter_candidate_methods(self):
-        yield from self._iter_named_candidate_methods(
-            self.IMAGE_METHOD_KEYWORDS,
-            self.IMAGE_PLUGIN_KEYWORDS,
-            self.GENERIC_METHOD_NAMES,
-        )
-
-    def _iter_image_edit_candidate_methods(self):
-        yield from self._iter_named_candidate_methods(
-            self.IMAGE_EDIT_METHOD_KEYWORDS,
-            self.IMAGE_PLUGIN_KEYWORDS,
-            {"edit", "selfie"},
-            extra_child_attrs=self.IMAGE_EDIT_CHILD_ATTRS,
-            allow_selfie_child_generate=True,
-        )
-
-    def _iter_video_candidate_methods(self):
-        yield from self._iter_named_candidate_methods(
-            self.VIDEO_METHOD_KEYWORDS,
-            self.VIDEO_PLUGIN_KEYWORDS + self.IMAGE_PLUGIN_KEYWORDS,
-            self.GENERIC_VIDEO_METHOD_NAMES,
-        )
-
-    def _iter_tts_candidate_methods(self):
-        yield from self._iter_named_candidate_methods(
-            self.TTS_METHOD_KEYWORDS,
-            self.TTS_PLUGIN_KEYWORDS,
-            self.GENERIC_TTS_METHOD_NAMES,
-            require_prompt=False,
-        )
-
-    def discover_image_methods(self) -> list[dict]:
-        candidates = list(self._iter_candidate_methods())
-        candidates.sort(
-            key=lambda item: (
-                item["score"],
-                self._star_display_name(item["star"]),
-                item["method_path"],
-            ),
-            reverse=True,
-        )
-        return candidates
-
-    def discover_image_edit_methods(self) -> list[dict]:
-        candidates = list(self._iter_image_edit_candidate_methods())
-        candidates.sort(
-            key=lambda item: (
-                item["score"],
-                self._star_display_name(item["star"]),
-                item["method_path"],
-            ),
-            reverse=True,
-        )
-        return candidates
-
-    def discover_video_methods(self) -> list[dict]:
-        candidates = list(self._iter_video_candidate_methods())
-        candidates.sort(
-            key=lambda item: (
-                item["score"],
-                self._star_display_name(item["star"]),
-                item["method_path"],
-            ),
-            reverse=True,
-        )
-        return candidates
-
-    def discover_tts_methods(self) -> list[dict]:
-        candidates = list(self._iter_tts_candidate_methods())
-        candidates.sort(
-            key=lambda item: (
-                item["score"],
-                self._star_display_name(item["star"]),
-                item["method_path"],
-            ),
-            reverse=True,
-        )
-        return candidates
 
     def _extract_field_path(
         self,
@@ -701,6 +359,9 @@ class ImageProviderManager:
         tool_name = str(tool_name or "").strip()
         if not tool_name:
             return None
+        if self._is_blocked_llm_tool_name(tool_name):
+            logger.warning(f"[DailySharing] Refusing blocked calibrated LLM tool: {tool_name}")
+            return None
         getter = getattr(self.context, "get_llm_tool_manager", None)
         tool_mgr = getter() if callable(getter) else None
         if tool_mgr and hasattr(tool_mgr, "get_func"):
@@ -711,6 +372,14 @@ class ImageProviderManager:
             if str(getattr(tool, "name", "") or "") == tool_name:
                 return tool
         return None
+
+    def _is_blocked_llm_tool_name(self, tool_name: str) -> bool:
+        name = str(tool_name or "").strip().lower()
+        if not name:
+            return True
+        if name in self.CALIBRATED_TOOL_BLOCKLIST:
+            return True
+        return any(part in name for part in self.CALIBRATED_TOOL_BLOCKED_PARTS)
 
     def _read_recorded_tool_args(self, config_key: str) -> dict:
         raw = self.image_conf.get(config_key, {})
@@ -1286,235 +955,6 @@ class ImageProviderManager:
             logger.error(f"[DailySharing] {label} provider failed: {exc}")
             return None
 
-    async def _try_auto_candidates(
-        self,
-        candidates: list[dict],
-        *,
-        values: list[tuple[tuple[str, ...], Any]],
-        extra_args_key: str,
-        result_field_key: str,
-        result_keys: tuple[str, ...],
-        label: str,
-    ) -> Optional[str]:
-        if not candidates:
-            logger.warning(f"[DailySharing] Auto scan found no usable {label} method")
-            return None
-
-        extra_args = self._read_json_args(extra_args_key, f"{label} extra args")
-        for candidate in candidates:
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            kwargs = self._build_supported_kwargs(candidate["method"], extra_args, values)
-            if kwargs is None:
-                logger.debug(f"[DailySharing] Auto scan candidate required args missing: {plugin_name}.{method_path}")
-                continue
-            try:
-                logger.info(f"[DailySharing] Auto scan trying {label}: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                media_ref = self._extract_result(
-                    result,
-                    result_field=str(self.image_conf.get(result_field_key, "") or "").strip(),
-                    result_keys=result_keys,
-                )
-                if media_ref:
-                    logger.info(f"[DailySharing] Auto scan {label} succeeded: {plugin_name}.{method_path}")
-                    return media_ref
-                logger.debug(f"[DailySharing] Auto scan candidate returned no media: {plugin_name}.{method_path}")
-            except TypeError as exc:
-                logger.debug(f"[DailySharing] Auto scan candidate argument mismatch: {plugin_name}.{method_path}: {exc}")
-            except Exception as exc:
-                logger.warning(f"[DailySharing] Auto scan candidate failed: {plugin_name}.{method_path}: {exc}")
-
-        logger.error(f"[DailySharing] Auto scan found {label} candidates, but all calls failed")
-        return None
-
-    def _candidate_probe_config(
-        self,
-        candidate: dict,
-        media_ref: str,
-        *,
-        provider_type: str,
-        prompt_arg: str = "",
-        extra: dict = None,
-    ) -> dict:
-        plugin_name = self._star_display_name(candidate["star"])
-        method_path = candidate["method_path"]
-        config = {
-            "plugin_name": plugin_name,
-            "method_path": method_path,
-            "prompt_arg": prompt_arg or candidate.get("prompt_arg") or "prompt",
-            "media_ref": str(media_ref or ""),
-            "provider_type": provider_type,
-        }
-        if extra:
-            config.update(extra)
-        return config
-
-    async def probe_image_generation(self, prompt: str) -> Optional[dict]:
-        prompt = str(prompt or "").strip() or "a simple daily life photo, no text, no watermark"
-        extra_args = self._read_extra_args()
-        for candidate in self.discover_image_methods():
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            prompt_arg = candidate["prompt_arg"] or "prompt"
-            kwargs = self._build_supported_kwargs(
-                candidate["method"],
-                extra_args,
-                [((prompt_arg,), prompt), (self.PROMPT_ARG_NAMES, prompt)],
-            )
-            if kwargs is None:
-                continue
-            try:
-                logger.info(f"[DailySharing] Provider probe trying image: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                media_ref = self._extract_result(result)
-                if media_ref:
-                    return self._candidate_probe_config(
-                        candidate,
-                        media_ref,
-                        provider_type="image",
-                        prompt_arg=prompt_arg,
-                    )
-            except Exception as exc:
-                logger.debug(f"[DailySharing] Provider probe image failed: {plugin_name}.{method_path}: {exc}")
-        return None
-
-    async def probe_image_selfie(self, prompt: str, target_umo: str = "") -> Optional[dict]:
-        prompt = str(prompt or "").strip() or "a natural daily selfie photo, no text, no watermark"
-        extra_args = self._read_json_args("generic_image_edit_extra_args", "image selfie/reference extra args")
-        for candidate in self.discover_image_edit_methods():
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            plugin = getattr(candidate["star"], "star_cls", None)
-            refs = await self._get_plugin_reference_images(plugin)
-            kwargs = self._build_supported_kwargs(
-                candidate["method"],
-                extra_args,
-                [
-                    (self.PROMPT_ARG_NAMES, prompt),
-                    (self.IMAGE_ARG_NAMES, refs or None),
-                    (self.IMAGE_PATH_ARG_NAMES, refs[0] if refs else None),
-                    (self.SESSION_ARG_NAMES, target_umo or None),
-                ],
-            )
-            if kwargs is None:
-                continue
-            try:
-                logger.info(f"[DailySharing] Provider probe trying image selfie/reference: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                media_ref = self._extract_result(
-                    result,
-                    result_field=str(self.image_conf.get("generic_image_result_field", "") or "").strip(),
-                    result_keys=self.RESULT_FIELDS,
-                )
-                if media_ref:
-                    prompt_arg = self._select_supported_arg(candidate["method"], self.PROMPT_ARG_NAMES) or "prompt"
-                    return self._candidate_probe_config(
-                        candidate,
-                        media_ref,
-                        provider_type="selfie",
-                        prompt_arg=prompt_arg,
-                        extra={"reference_count": len(refs or [])},
-                    )
-            except Exception as exc:
-                logger.debug(f"[DailySharing] Provider probe image selfie/reference failed: {plugin_name}.{method_path}: {exc}")
-        return None
-
-    async def probe_tts_generation(
-        self,
-        text: str,
-        *,
-        emotion: str = "neutral",
-        target_umo: str = "",
-        session_state=None,
-    ) -> Optional[dict]:
-        text = str(text or "").strip() or "每日分享语音测试"
-        extra_args = self._read_json_args("generic_tts_extra_args", "TTS generation extra args")
-        for candidate in self.discover_tts_methods():
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            kwargs = self._build_supported_kwargs(
-                candidate["method"],
-                extra_args,
-                [
-                    (self.TTS_TEXT_ARG_NAMES, text),
-                    (self.TTS_EMOTION_ARG_NAMES, emotion or None),
-                    (self.TTS_SESSION_ARG_NAMES, target_umo or None),
-                    (("session_state", "state"), session_state),
-                ],
-            )
-            if kwargs is None:
-                continue
-            try:
-                logger.info(f"[DailySharing] Provider probe trying TTS: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                media_ref = self._extract_result(
-                    result,
-                    result_field=str(self.image_conf.get("generic_tts_result_field", "") or "").strip(),
-                    result_keys=self.AUDIO_RESULT_FIELDS,
-                )
-                if media_ref:
-                    text_arg = self._select_supported_arg(candidate["method"], self.TTS_TEXT_ARG_NAMES) or "text"
-                    return self._candidate_probe_config(
-                        candidate,
-                        media_ref,
-                        provider_type="tts",
-                        prompt_arg=text_arg,
-                    )
-            except Exception as exc:
-                logger.debug(f"[DailySharing] Provider probe TTS failed: {plugin_name}.{method_path}: {exc}")
-        return None
-
-    async def _try_auto_image_edit_candidates(
-        self,
-        candidates: list[dict],
-        *,
-        prompt: str,
-        target_umo: str = "",
-    ) -> Optional[str]:
-        if not candidates:
-            logger.warning("[DailySharing] Auto scan found no usable image selfie/reference method")
-            return None
-
-        extra_args = self._read_json_args("generic_image_edit_extra_args", "image selfie/reference extra args")
-        for candidate in candidates:
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            plugin = getattr(candidate["star"], "star_cls", None)
-            refs = await self._get_plugin_reference_images(plugin)
-            kwargs = self._build_supported_kwargs(
-                candidate["method"],
-                extra_args,
-                [
-                    (self.PROMPT_ARG_NAMES, prompt),
-                    (self.IMAGE_ARG_NAMES, refs or None),
-                    (self.IMAGE_PATH_ARG_NAMES, refs[0] if refs else None),
-                    (self.SESSION_ARG_NAMES, target_umo or None),
-                ],
-            )
-            if kwargs is None:
-                logger.debug(f"[DailySharing] Auto scan image selfie/reference required args missing: {plugin_name}.{method_path}")
-                continue
-            try:
-                logger.info(f"[DailySharing] Auto scan trying image selfie/reference: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                media_ref = self._extract_result(
-                    result,
-                    result_field=str(self.image_conf.get("generic_image_result_field", "") or "").strip(),
-                    result_keys=self.RESULT_FIELDS,
-                )
-                if media_ref:
-                    logger.info(f"[DailySharing] Auto scan image selfie/reference succeeded: {plugin_name}.{method_path}")
-                    return media_ref
-                logger.debug(f"[DailySharing] Auto scan image selfie/reference returned no media: {plugin_name}.{method_path}")
-            except TypeError as exc:
-                logger.debug(f"[DailySharing] Auto scan image selfie/reference argument mismatch: {plugin_name}.{method_path}: {exc}")
-            except Exception as exc:
-                logger.warning(f"[DailySharing] Auto scan image selfie/reference failed: {plugin_name}.{method_path}: {exc}")
-
-        logger.error("[DailySharing] Auto scan found image selfie/reference candidates, but all calls failed")
-        return None
-
     async def generate_with_generic_plugin(
         self,
         prompt: str,
@@ -1591,47 +1031,6 @@ class ImageProviderManager:
             logger.error(f"[DailySharing] Generic image provider failed: {exc}")
             return None
 
-    async def generate_with_auto_scan(
-        self,
-        prompt: str,
-        use_ref_selfie: bool = False,
-        target_umo: str = "",
-    ) -> Optional[str]:
-        if use_ref_selfie:
-            return await self._try_auto_image_edit_candidates(
-                self.discover_image_edit_methods(),
-                prompt=prompt,
-                target_umo=target_umo,
-            )
-
-        candidates = self.discover_image_methods()
-        if not candidates:
-            logger.warning("[DailySharing] Auto scan found no usable image generation method")
-            return None
-
-        extra_args = self._read_extra_args()
-        for candidate in candidates:
-            plugin_name = self._star_display_name(candidate["star"])
-            method_path = candidate["method_path"]
-            prompt_arg = candidate["prompt_arg"]
-            kwargs = extra_args.copy()
-            kwargs[prompt_arg] = prompt
-            try:
-                logger.info(f"[DailySharing] Auto scan trying image generation: {plugin_name}.{method_path}")
-                result = await self._maybe_await(candidate["method"](**kwargs))
-                image_ref = self._extract_result(result)
-                if image_ref:
-                    logger.info(f"[DailySharing] Auto scan image generation succeeded: {plugin_name}.{method_path}")
-                    return image_ref
-                logger.debug(f"[DailySharing] Auto scan candidate returned no image: {plugin_name}.{method_path}")
-            except TypeError as exc:
-                logger.debug(f"[DailySharing] Auto scan candidate argument mismatch: {plugin_name}.{method_path}: {exc}")
-            except Exception as exc:
-                logger.warning(f"[DailySharing] Auto scan candidate failed: {plugin_name}.{method_path}: {exc}")
-
-        logger.error("[DailySharing] Auto scan found candidates, but all calls failed")
-        return None
-
     async def generate_with_calibrated_tool(
         self,
         prompt: str,
@@ -1704,20 +1103,6 @@ class ImageProviderManager:
             label="generic video",
         )
 
-    async def generate_video_with_auto_scan(self, prompt: str, image_path: str, image_bytes: bytes = None) -> Optional[str]:
-        return await self._try_auto_candidates(
-            self.discover_video_methods(),
-            values=[
-                (self.VIDEO_PROMPT_ARG_NAMES, prompt),
-                (self.VIDEO_IMAGE_PATH_ARG_NAMES, image_path),
-                (self.VIDEO_IMAGE_BYTES_ARG_NAMES, image_bytes),
-            ],
-            extra_args_key="generic_video_extra_args",
-            result_field_key="generic_video_result_field",
-            result_keys=self.VIDEO_RESULT_FIELDS,
-            label="video generation",
-        )
-
     async def generate_video_with_calibrated_tool(self, prompt: str, image_path: str, image_bytes: bytes = None, target_umo: str = "") -> Optional[str]:
         await self._call_recorded_llm_tool_external_delivery(
             media_type="video",
@@ -1762,28 +1147,6 @@ class ImageProviderManager:
             label="generic TTS",
         )
 
-    async def generate_tts_with_auto_scan(
-        self,
-        text: str,
-        *,
-        emotion: str = "",
-        target_umo: str = "",
-        session_state=None,
-    ) -> Optional[str]:
-        return await self._try_auto_candidates(
-            self.discover_tts_methods(),
-            values=[
-                (self.TTS_TEXT_ARG_NAMES, text),
-                (self.TTS_EMOTION_ARG_NAMES, emotion or None),
-                (self.TTS_SESSION_ARG_NAMES, target_umo or None),
-                (("session_state", "state"), session_state),
-            ],
-            extra_args_key="generic_tts_extra_args",
-            result_field_key="generic_tts_result_field",
-            result_keys=self.AUDIO_RESULT_FIELDS,
-            label="TTS generation",
-        )
-
     async def generate_tts_with_calibrated_tool(
         self,
         text: str,
@@ -1811,25 +1174,25 @@ class ImageProviderManager:
         return None
 
     def select_video_provider(self) -> str:
-        provider = str(self.image_conf.get("video_provider", "gitee_aiimg") or "gitee_aiimg").strip().lower()
-        if provider in {"generic", "plugin", "custom"}:
+        provider = str(self.image_conf.get("video_provider", "generic_plugin") or "generic_plugin").strip().lower()
+        if provider in {"generic", "plugin", "custom", "generic_plugin"}:
             return "generic_plugin"
-        if provider in {"calibrated", "calibrated_tool", "llm_tool", "scan", "auto_scan", "tool_scan", "auto"}:
+        if provider in {"calibrated", "calibrated_tool", "llm_tool"}:
             return "calibrated_tool"
-        return provider
+        return "generic_plugin"
 
     def select_tts_provider(self) -> str:
-        provider = str(self.image_conf.get("tts_provider", "emotion_router") or "emotion_router").strip().lower()
-        if provider in {"generic", "plugin", "custom"}:
+        provider = str(self.image_conf.get("tts_provider", "generic_plugin") or "generic_plugin").strip().lower()
+        if provider in {"generic", "plugin", "custom", "generic_plugin"}:
             return "generic_plugin"
-        if provider in {"calibrated", "calibrated_tool", "llm_tool", "scan", "auto_scan", "tool_scan", "auto"}:
+        if provider in {"calibrated", "calibrated_tool", "llm_tool"}:
             return "calibrated_tool"
-        return provider
+        return "generic_plugin"
 
     def select_provider(self) -> str:
-        provider = str(self.image_conf.get("image_provider", "gitee_aiimg") or "gitee_aiimg").strip().lower()
-        if provider in {"generic", "plugin", "custom"}:
+        provider = str(self.image_conf.get("image_provider", "generic_plugin") or "generic_plugin").strip().lower()
+        if provider in {"generic", "plugin", "custom", "generic_plugin"}:
             return "generic_plugin"
-        if provider in {"calibrated", "calibrated_tool", "llm_tool", "scan", "auto_scan", "tool_scan", "auto"}:
+        if provider in {"calibrated", "calibrated_tool", "llm_tool"}:
             return "calibrated_tool"
-        return provider
+        return "generic_plugin"

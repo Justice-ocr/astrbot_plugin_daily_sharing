@@ -98,10 +98,10 @@ export function createSettingsConfig({
 
   function normalizeProviderMode(value, fallback) {
     const mode = text(value).trim();
-    if (["auto_scan", "auto", "scan", "tool_scan"].includes(mode)) {
-      return "calibrated_tool";
+    if (["generic_plugin", "calibrated_tool"].includes(mode)) {
+      return mode;
     }
-    return mode || fallback;
+    return fallback;
   }
 
   function formatProviderProbeResult(data = {}) {
@@ -303,7 +303,7 @@ export function createSettingsConfig({
     setInputValue(el.cfgRecCats, arrayToLines(content.rec_cats));
 
     setInputChecked(el.cfgAiImage, media.enable_ai_image);
-    setInputValue(el.cfgImageProvider, normalizeProviderMode(media.image_provider, "gitee_aiimg"));
+    setInputValue(el.cfgImageProvider, normalizeProviderMode(media.image_provider, "generic_plugin"));
     setInputValue(el.cfgGenericImagePlugin, media.generic_image_plugin_name || "");
     setInputValue(el.cfgGenericImageMethod, media.generic_image_method_path || "");
     setInputValue(el.cfgGenericImagePromptArg, media.generic_image_prompt_arg || "prompt");
@@ -318,7 +318,7 @@ export function createSettingsConfig({
     setInputChecked(el.cfgGiteeSelfieRef, media.use_gitee_selfie_ref);
     setInputChecked(el.cfgPriorityText, media.priority_text_over_schedule);
     setInputChecked(el.cfgAiVideo, media.enable_ai_video);
-    setInputValue(el.cfgVideoProvider, normalizeProviderMode(media.video_provider, "gitee_aiimg"));
+    setInputValue(el.cfgVideoProvider, normalizeProviderMode(media.video_provider, "generic_plugin"));
     setInputValue(el.cfgGenericVideoPlugin, media.generic_video_plugin_name || "");
     setInputValue(el.cfgGenericVideoMethod, media.generic_video_method_path || "");
     setInputValue(el.cfgGenericVideoExtraArgs, media.generic_video_extra_args || "");
@@ -329,7 +329,7 @@ export function createSettingsConfig({
     setInputChecked(el.cfgAlwaysSelf, media.image_always_include_self);
     setInputChecked(el.cfgNeverSelf, media.image_never_include_self);
     setInputChecked(el.cfgTtsEnabled, media.enable_tts);
-    setInputValue(el.cfgTtsProvider, normalizeProviderMode(media.tts_provider, "emotion_router"));
+    setInputValue(el.cfgTtsProvider, normalizeProviderMode(media.tts_provider, "generic_plugin"));
     setInputValue(el.cfgGenericTtsPlugin, media.generic_tts_plugin_name || "");
     setInputValue(el.cfgGenericTtsMethod, media.generic_tts_method_path || "");
     setInputValue(el.cfgGenericTtsTextArg, media.generic_tts_text_arg || "text");
@@ -452,7 +452,7 @@ export function createSettingsConfig({
         },
         media: {
           enable_ai_image: Boolean(el.cfgAiImage?.checked),
-          image_provider: el.cfgImageProvider?.value || "gitee_aiimg",
+          image_provider: el.cfgImageProvider?.value || "generic_plugin",
           generic_image_plugin_name: text(el.cfgGenericImagePlugin?.value).trim(),
           generic_image_method_path: text(el.cfgGenericImageMethod?.value).trim(),
           generic_image_prompt_arg: text(el.cfgGenericImagePromptArg?.value).trim() || "prompt",
@@ -467,7 +467,7 @@ export function createSettingsConfig({
           use_gitee_selfie_ref: Boolean(el.cfgGiteeSelfieRef?.checked),
           priority_text_over_schedule: Boolean(el.cfgPriorityText?.checked),
           enable_ai_video: Boolean(el.cfgAiVideo?.checked),
-          video_provider: el.cfgVideoProvider?.value || "gitee_aiimg",
+          video_provider: el.cfgVideoProvider?.value || "generic_plugin",
           generic_video_plugin_name: text(el.cfgGenericVideoPlugin?.value).trim(),
           generic_video_method_path: text(el.cfgGenericVideoMethod?.value).trim(),
           generic_video_extra_args: text(el.cfgGenericVideoExtraArgs?.value).trim(),
@@ -479,7 +479,7 @@ export function createSettingsConfig({
           image_always_include_self: Boolean(el.cfgAlwaysSelf?.checked),
           image_never_include_self: Boolean(el.cfgNeverSelf?.checked),
           enable_tts: Boolean(el.cfgTtsEnabled?.checked),
-          tts_provider: el.cfgTtsProvider?.value || "emotion_router",
+          tts_provider: el.cfgTtsProvider?.value || "generic_plugin",
           generic_tts_plugin_name: text(el.cfgGenericTtsPlugin?.value).trim(),
           generic_tts_method_path: text(el.cfgGenericTtsMethod?.value).trim(),
           generic_tts_text_arg: text(el.cfgGenericTtsTextArg?.value).trim() || "text",

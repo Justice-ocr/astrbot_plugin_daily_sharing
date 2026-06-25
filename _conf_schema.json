@@ -500,14 +500,14 @@
         "description": "启用生成配图",
         "type": "bool",
         "default": false,
-        "hint": "开启后会根据下方生图 provider 配置调用生图插件。默认兼容 astrbot_plugin_gitee_aiimg。"
+        "hint": "开启后会根据下方生图 provider 配置调用生图插件。可手动填写插件工具，也可在 Pages 中校准后自动写入。"
       },
       "image_provider": {
         "description": "生图 provider",
         "type": "string",
-        "default": "gitee_aiimg",
-        "options": ["gitee_aiimg", "generic_plugin", "calibrated_tool"],
-        "hint": "gitee_aiimg=使用万象画卷/Gitee AIImg；generic_plugin=手动指定其它插件方法；calibrated_tool=使用页面校准按钮记录的 LLM 工具。"
+        "default": "generic_plugin",
+        "options": ["generic_plugin", "calibrated_tool"],
+        "hint": "generic_plugin=手动指定插件方法；calibrated_tool=使用页面校准按钮记录的 LLM 工具。"
       },
       "generic_image_plugin_name": {
         "description": "通用生图插件名",
@@ -620,7 +620,7 @@
         "description": "启用形象参考图",
         "type": "bool",
         "default": false,
-        "hint": "开启后，若判断需要画人，将尝试使用 astrbot_plugin_gitee_aiimg 插件中保存的形象参考图进行图生图以保持一致性。"
+        "hint": "开启后，若判断需要画人，将优先调用手动配置或校准得到的自拍/参考图工具，让生图插件自行使用其人设参考图。"
       },
       "priority_text_over_schedule": {
         "description": "文案主导构图",
@@ -641,14 +641,14 @@
         "description": "启用生成视频",
         "type": "bool",
         "default": false,
-        "hint": "开启后，将尝试把配图转换为视频。默认使用 Gitee AIImg 视频链，也可配置通用视频 provider 或校准工具。"
+        "hint": "开启后，将尝试把配图转换为视频。可手动填写视频插件工具，也可在 Pages 中校准后自动写入。"
       },
       "video_provider": {
         "description": "视频 provider",
         "type": "string",
-        "default": "gitee_aiimg",
-        "options": ["gitee_aiimg", "generic_plugin", "calibrated_tool"],
-        "hint": "gitee_aiimg=使用万象画卷/Gitee AIImg 视频链；generic_plugin=手动指定视频方法；calibrated_tool=使用已校准的视频 LLM 工具。"
+        "default": "generic_plugin",
+        "options": ["generic_plugin", "calibrated_tool"],
+        "hint": "generic_plugin=手动指定视频方法；calibrated_tool=使用已校准的视频 LLM 工具。"
       },
       "generic_video_plugin_name": {
         "description": "通用视频插件名",
@@ -792,20 +792,20 @@
   "tts_conf": {
     "description": "🗣️ 语音发送设置",
     "type": "object",
-    "hint": "调用 astrbot_plugin_tts_emotion_router 插件将文案转为语音发送。",
+    "hint": "调用已配置的语音插件工具将文案转为语音发送。",
     "items": {
       "enable_tts": {
         "description": "启用语音转换",
         "type": "bool",
         "default": false,
-        "hint": "开启后，尝试调用 TTS provider 生成语音。默认兼容 astrbot_plugin_tts_emotion_router，也可配置通用语音插件或校准工具。"
+        "hint": "开启后，尝试调用 TTS provider 生成语音。可手动填写语音插件工具，也可在 Pages 中校准后自动写入。"
       },
       "tts_provider": {
         "description": "语音 provider",
         "type": "string",
-        "default": "emotion_router",
-        "options": ["emotion_router", "generic_plugin", "calibrated_tool"],
-        "hint": "emotion_router=使用 astrbot_plugin_tts_emotion_router；generic_plugin=手动指定语音方法；calibrated_tool=使用页面校准按钮记录的 LLM 工具。"
+        "default": "generic_plugin",
+        "options": ["generic_plugin", "calibrated_tool"],
+        "hint": "generic_plugin=手动指定语音方法；calibrated_tool=使用页面校准按钮记录的 LLM 工具。"
       },
       "generic_tts_plugin_name": {
         "description": "通用语音插件名",

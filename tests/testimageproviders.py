@@ -101,32 +101,6 @@ class _LlmTool:
 
 
 class ImageProviderManagerTests(unittest.TestCase):
-    def test_auto_scan_skips_text_renderers_after_draw_succeeds(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class DrawService:
-            async def generate(self, prompt):
-                calls.append(("draw.generate", prompt))
-                return {"data": {"image_path": "/tmp/generated.png"}}
-
-        class Plugin:
-            draw = DrawService()
-
-            async def text_to_image(self, text):
-                calls.append(("text_to_image", text))
-                return "/tmp/text-card.png"
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("astrbot_plugin_aiimg_enhanced", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(manager.generate_with_auto_scan("real prompt"))
-
-        self.assertEqual(result, "/tmp/generated.png")
-        self.assertEqual(calls, [("draw.generate", "real prompt")])
-
     def test_manual_generic_provider_resolves_method_and_extra_args(self):
         providers = _load_providers_module()
         calls = []
@@ -153,28 +127,6 @@ class ImageProviderManagerTests(unittest.TestCase):
 
         self.assertEqual(result, "/tmp/manual.png")
         self.assertEqual(calls, [("manual prompt", "1024x1024")])
-
-    def test_probe_image_generation_reports_matched_candidate(self):
-        providers = _load_providers_module()
-
-        class DrawService:
-            def generate(self, prompt):
-                return {"data": {"image_path": "/tmp/probe.png"}}
-
-        class Plugin:
-            draw = DrawService()
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("custom_image_plugin", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(manager.probe_image_generation("probe prompt"))
-
-        self.assertEqual(result["plugin_name"], "custom_image_plugin")
-        self.assertEqual(result["method_path"], "draw.generate")
-        self.assertEqual(result["prompt_arg"], "prompt")
-        self.assertEqual(result["media_ref"], "/tmp/probe.png")
 
     def test_generic_image_edit_uses_plugin_reference_images(self):
         providers = _load_providers_module()
@@ -234,127 +186,18 @@ class ImageProviderManagerTests(unittest.TestCase):
 
         manager = providers.ImageProviderManager(
             _Context([_Star("astrbot_plugin_aiimg_enhanced", Plugin())]),
-            {"image_provider": "auto_scan"},
+            {
+                "image_provider": "generic_plugin",
+                "generic_image_plugin_name": "astrbot_plugin_aiimg_enhanced",
+                "generic_image_method_path": "draw.generate",
+                "generic_image_edit_method_path": "edit.edit",
+            },
         )
 
-        result = asyncio.run(manager.generate_with_auto_scan("selfie prompt", use_ref_selfie=True))
+        result = asyncio.run(manager.generate_with_generic_plugin("selfie prompt", use_ref_selfie=True))
 
         self.assertEqual(result, "/tmp/persona-selfie.png")
         self.assertEqual(calls, [("selfie prompt", [b"bytes:/tmp/persona-ref.png"])])
-
-    def test_auto_scan_prefers_edit_method_for_selfie_mode(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class Plugin:
-            def edit_image(self, prompt):
-                calls.append(("edit_image", prompt))
-                return "/tmp/auto-selfie.png"
-
-            def draw_image(self, prompt):
-                calls.append(("draw_image", prompt))
-                return "/tmp/auto-draw.png"
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_image_tools", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(manager.generate_with_auto_scan("selfie prompt", use_ref_selfie=True))
-
-        self.assertEqual(result, "/tmp/auto-selfie.png")
-        self.assertEqual(calls, [("edit_image", "selfie prompt")])
-
-    def test_auto_scan_selfie_mode_passes_session_to_selfie_tool(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class Plugin:
-            def generate_selfie(self, prompt, session):
-                calls.append(("generate_selfie", prompt, session))
-                return "/tmp/session-selfie.png"
-
-            def draw_image(self, prompt):
-                calls.append(("draw_image", prompt))
-                return "/tmp/auto-draw.png"
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_persona_image_tools", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(
-            manager.generate_with_auto_scan(
-                "selfie prompt",
-                use_ref_selfie=True,
-                target_umo="FriendMessage:123",
-            )
-        )
-
-        self.assertEqual(result, "/tmp/session-selfie.png")
-        self.assertEqual(calls, [("generate_selfie", "selfie prompt", "FriendMessage:123")])
-
-    def test_auto_scan_finds_generate_method_under_selfie_child(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class SelfieService:
-            def generate(self, prompt, target_umo):
-                calls.append(("selfie.generate", prompt, target_umo))
-                return "/tmp/child-selfie.png"
-
-        class DrawService:
-            def generate(self, prompt):
-                calls.append(("draw.generate", prompt))
-                return "/tmp/draw.png"
-
-        class Plugin:
-            selfie = SelfieService()
-            draw = DrawService()
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_image_tools", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(
-            manager.generate_with_auto_scan(
-                "selfie prompt",
-                use_ref_selfie=True,
-                target_umo="FriendMessage:456",
-            )
-        )
-
-        self.assertEqual(result, "/tmp/child-selfie.png")
-        self.assertEqual(calls, [("selfie.generate", "selfie prompt", "FriendMessage:456")])
-
-    def test_auto_scan_normal_mode_ignores_selfie_child_generate(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class SelfieService:
-            def generate(self, prompt):
-                calls.append(("selfie.generate", prompt))
-                return "/tmp/selfie.png"
-
-        class DrawService:
-            def generate(self, prompt):
-                calls.append(("draw.generate", prompt))
-                return "/tmp/draw.png"
-
-        class Plugin:
-            selfie = SelfieService()
-            draw = DrawService()
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_image_tools", Plugin())]),
-            {"image_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(manager.generate_with_auto_scan("normal prompt"))
-
-        self.assertEqual(result, "/tmp/draw.png")
-        self.assertEqual(calls, [("draw.generate", "normal prompt")])
 
     def test_calibrated_provider_self_delivers_recorded_llm_image_tool(self):
         providers = _load_providers_module()
@@ -551,27 +394,6 @@ class ImageProviderManagerTests(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(calls, [])
 
-    def test_auto_scan_video_uses_prompt_and_image_path(self):
-        providers = _load_providers_module()
-        calls = []
-
-        class Plugin:
-            def image_to_video(self, prompt, image_path):
-                calls.append((prompt, image_path))
-                return {"data": {"video_url": "https://example.com/video.mp4"}}
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_video_tools", Plugin())]),
-            {"video_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(
-            manager.generate_video_with_auto_scan("video prompt", "D:/tmp/image.png", b"image-bytes")
-        )
-
-        self.assertEqual(result, "https://example.com/video.mp4")
-        self.assertEqual(calls, [("video prompt", "D:/tmp/image.png")])
-
     def test_generic_tts_passes_text_and_emotion(self):
         providers = _load_providers_module()
         calls = []
@@ -597,38 +419,82 @@ class ImageProviderManagerTests(unittest.TestCase):
         self.assertEqual(result, "/tmp/voice.mp3")
         self.assertEqual(calls, [("hello", "happy")])
 
-    def test_probe_tts_generation_reports_matched_candidate(self):
+    def test_removed_auto_provider_falls_back_to_generic_plugin(self):
         providers = _load_providers_module()
 
-        class Plugin:
-            def text_to_speech(self, text, emotion):
-                return {"audio_path": f"/tmp/{emotion}-{text}.mp3"}
-
         manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_voice_tools", Plugin())]),
-            {"tts_provider": "auto_scan"},
-        )
-
-        result = asyncio.run(manager.probe_tts_generation("hello", emotion="happy"))
-
-        self.assertEqual(result["plugin_name"], "plugin_voice_tools")
-        self.assertEqual(result["method_path"], "text_to_speech")
-        self.assertEqual(result["prompt_arg"], "text")
-        self.assertEqual(result["media_ref"], "/tmp/happy-hello.mp3")
-
-    def test_legacy_auto_provider_maps_to_calibrated_tool(self):
-        providers = _load_providers_module()
-
-        class Plugin:
-            def draw_image(self, prompt):
-                return "/tmp/scan.png"
-
-        manager = providers.ImageProviderManager(
-            _Context([_Star("plugin_draw_image", Plugin())]),
+            _Context([]),
             {"image_provider": "auto"},
         )
 
-        self.assertEqual(manager.select_provider(), "calibrated_tool")
+        self.assertEqual(manager.select_provider(), "generic_plugin")
+
+    def test_removed_fixed_providers_fall_back_to_generic_plugin(self):
+        providers = _load_providers_module()
+
+        image_manager = providers.ImageProviderManager(
+            _Context([]),
+            {"image_provider": "gitee_aiimg", "video_provider": "gitee_aiimg"},
+        )
+        tts_manager = providers.ImageProviderManager(
+            _Context([]),
+            {"tts_provider": "emotion_router"},
+        )
+
+        self.assertEqual(image_manager.select_provider(), "generic_plugin")
+        self.assertEqual(image_manager.select_video_provider(), "generic_plugin")
+        self.assertEqual(tts_manager.select_tts_provider(), "generic_plugin")
+
+    def test_unknown_providers_fall_back_to_generic_plugin(self):
+        providers = _load_providers_module()
+        manager = providers.ImageProviderManager(
+            _Context([]),
+            {
+                "image_provider": "unknown_image",
+                "video_provider": "unknown_video",
+                "tts_provider": "unknown_tts",
+            },
+        )
+
+        self.assertEqual(manager.select_provider(), "generic_plugin")
+        self.assertEqual(manager.select_video_provider(), "generic_plugin")
+        self.assertEqual(manager.select_tts_provider(), "generic_plugin")
+
+    def test_calibrated_tool_blacklist_blocks_message_and_own_tools(self):
+        providers = _load_providers_module()
+
+        async def blocked_tool(event, prompt):
+            await event.send(types.SimpleNamespace(chain=[types.SimpleNamespace(path="/tmp/blocked.png")]))
+
+        for tool_name in ("send_message_to_user", "daily_share", "news_link"):
+            with self.subTest(tool_name=tool_name):
+                context = _ToolContext(
+                    [],
+                    [
+                        _LlmTool(
+                            tool_name,
+                            {
+                                "type": "object",
+                                "properties": {"prompt": {"type": "string"}},
+                            },
+                            blocked_tool,
+                        )
+                    ],
+                )
+                manager = providers.ImageProviderManager(
+                    context,
+                    {
+                        "image_provider": "calibrated_tool",
+                        "llm_image_tool_name": tool_name,
+                        "llm_image_tool_args": {"prompt": "probe prompt"},
+                    },
+                )
+
+                result = asyncio.run(manager.generate_with_calibrated_tool("real prompt"))
+
+                self.assertIsNone(result)
+                self.assertEqual(context.sent_messages, [])
+                self.assertFalse(manager.get_last_external_delivery("image")["sent"])
 
     def test_schema_exposes_generic_image_provider_options(self):
         schema = json.loads((ROOT / "_conf_schema.json").read_text(encoding="utf-8"))
@@ -636,7 +502,7 @@ class ImageProviderManagerTests(unittest.TestCase):
 
         self.assertEqual(
             image_items["image_provider"]["options"],
-            ["gitee_aiimg", "generic_plugin", "calibrated_tool"],
+            ["generic_plugin", "calibrated_tool"],
         )
         self.assertIn("generic_image_method_path", image_items)
         self.assertIn("generic_image_result_field", image_items)
@@ -646,7 +512,7 @@ class ImageProviderManagerTests(unittest.TestCase):
         tts_items = schema["tts_conf"]["items"]
         self.assertEqual(
             tts_items["tts_provider"]["options"],
-            ["emotion_router", "generic_plugin", "calibrated_tool"],
+            ["generic_plugin", "calibrated_tool"],
         )
         self.assertIn("generic_tts_method_path", tts_items)
 

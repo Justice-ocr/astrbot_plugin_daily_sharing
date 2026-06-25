@@ -181,12 +181,10 @@ class DashboardConfigApplyMixin:
             )
         if "image_provider" in media_body:
             image_provider = str(media_body.get("image_provider") or "").strip()
-            if image_provider in {"auto_scan", "auto", "scan", "tool_scan"}:
-                image_provider = "calibrated_tool"
             image["image_provider"] = self._page_choice_value(
                 image_provider,
-                {"gitee_aiimg", "generic_plugin", "calibrated_tool"},
-                "gitee_aiimg",
+                {"generic_plugin", "calibrated_tool"},
+                "generic_plugin",
                 "生图 provider",
             )
         for key in (
@@ -208,12 +206,10 @@ class DashboardConfigApplyMixin:
                 image[key] = self._page_clean_text(media_body.get(key), max_len=4000)
         if "video_provider" in media_body:
             video_provider = str(media_body.get("video_provider") or "").strip()
-            if video_provider in {"auto_scan", "auto", "scan", "tool_scan"}:
-                video_provider = "calibrated_tool"
             image["video_provider"] = self._page_choice_value(
                 video_provider,
-                {"gitee_aiimg", "generic_plugin", "calibrated_tool"},
-                "gitee_aiimg",
+                {"generic_plugin", "calibrated_tool"},
+                "generic_plugin",
                 "视频 provider",
             )
         if "image_enabled_types" in media_body:
@@ -235,12 +231,10 @@ class DashboardConfigApplyMixin:
         self._page_apply_bool_fields(tts, media_body, ("enable_tts", "prefer_audio_only"))
         if "tts_provider" in media_body:
             tts_provider = str(media_body.get("tts_provider") or "").strip()
-            if tts_provider in {"auto_scan", "auto", "scan", "tool_scan"}:
-                tts_provider = "calibrated_tool"
             tts["tts_provider"] = self._page_choice_value(
                 tts_provider,
-                {"emotion_router", "generic_plugin", "calibrated_tool"},
-                "emotion_router",
+                {"generic_plugin", "calibrated_tool"},
+                "generic_plugin",
                 "语音 provider",
             )
         for key in (

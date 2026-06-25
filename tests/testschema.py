@@ -62,6 +62,19 @@ class ConfigSchemaTests(unittest.TestCase):
         ):
             self.assertEqual(items[key]["type"], "text")
 
+    def test_media_provider_schema_only_exposes_generic_and_calibrated_modes(self):
+        schema = json.loads((ROOT / "_conf_schema.json").read_text(encoding="utf-8"))
+        image_items = schema["image_conf"]["items"]
+        tts_items = schema["tts_conf"]["items"]
+
+        for items, key in (
+            (image_items, "image_provider"),
+            (image_items, "video_provider"),
+            (tts_items, "tts_provider"),
+        ):
+            self.assertEqual(items[key]["default"], "generic_plugin")
+            self.assertEqual(items[key]["options"], ["generic_plugin", "calibrated_tool"])
+
     def test_runtime_does_not_read_legacy_weixin_image_size_key(self):
         runtime = (ROOT / "core" / "tasks" / "delivery.py").read_text(encoding="utf-8")
 

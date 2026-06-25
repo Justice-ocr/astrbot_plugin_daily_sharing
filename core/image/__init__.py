@@ -4,19 +4,16 @@ from typing import Optional
 from astrbot.api import logger
 
 from ..config import SharingType, TimePeriod
-from .aiimg import ImageAiimgMixin
 from .prompt import ImageVisualMixin
 from .providers import ImageProviderManager
 from .video import ImageVideoMixin
 
 
-class ImageService(ImageVisualMixin, ImageVideoMixin, ImageAiimgMixin):
+class ImageService(ImageVisualMixin, ImageVideoMixin):
     def __init__(self, context, config, llm_func):
         self.context = context
         self.config = config
         self.call_llm = llm_func
-        self._aiimg_plugin = None
-        self._aiimg_plugin_not_found = False
         self._last_image_description = None
         
         # 获取配置引用
@@ -47,11 +44,32 @@ class ImageService(ImageVisualMixin, ImageVideoMixin, ImageAiimgMixin):
         elif 19 <= hour < 22: return TimePeriod.NIGHT
         else: return TimePeriod.LATE_NIGHT
 
-    def _ensure_plugin(self):
-        """确保 Gitee 插件已加载"""
-        self._aiimg_plugin = self.provider_manager.get_gitee_plugin()
-        self._aiimg_plugin_not_found = not bool(self._aiimg_plugin)
-        return self._aiimg_plugin
+    async def _call_image_provider(
+        self,
+        prompt: str,
+        use_ref_selfie: bool = False,
+        target_umo: str = None,
+    ) -> Optional[str]:
+        """调用配置的生图 provider。"""
+        provider = self.provider_manager.select_provider()
+        if provider == "generic_plugin":
+            if use_ref_selfie:
+                logger.info("[每日分享] 当前为通用生图 provider，尝试使用通用改图/参考图方法")
+            return await self.provider_manager.generate_with_generic_plugin(
+                prompt,
+                use_ref_selfie=use_ref_selfie,
+                target_umo=target_umo or "",
+            )
+        if provider == "calibrated_tool":
+            if use_ref_selfie:
+                logger.info("[每日分享] 当前为校准工具生图 provider，优先调用已校准自拍/参考图工具")
+            return await self.provider_manager.generate_with_calibrated_tool(
+                prompt,
+                use_ref_selfie=use_ref_selfie,
+                target_umo=target_umo or "",
+            )
+        logger.warning(f"[每日分享] 未支持的生图 provider: {provider}")
+        return None
 
     async def generate_image(self, content: str, sharing_type: SharingType, life_context: str = None, target_umo: str = None) -> Optional[str]:
         """生成图片的入口函数"""
@@ -65,9 +83,9 @@ class ImageService(ImageVisualMixin, ImageVideoMixin, ImageAiimgMixin):
         is_text_priority = self.img_conf.get("priority_text_over_schedule", True)
         logic_str = "文案主导" if is_text_priority else "日程主导"        
 
-        # 检测是否启用 Gitee 形象参考图逻辑。
-        use_gitee_ref = self.img_conf.get("use_gitee_selfie_ref", False)
-        is_selfie_mode = involves_self and use_gitee_ref
+        # 检测是否启用形象参考图逻辑。
+        use_selfie_ref = self.img_conf.get("use_gitee_selfie_ref", False)
+        is_selfie_mode = involves_self and use_selfie_ref
         
         logger.info(f"[每日分享] 配图决策: {mode_str} ({logic_str}) | 类型: {sharing_type.value} | 形象模式: {is_selfie_mode}")        
         

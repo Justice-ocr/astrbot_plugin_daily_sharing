@@ -122,22 +122,6 @@ class ContextTtsMixin:
             provider = self.tts_provider_manager.select_tts_provider()
             session_state = None
 
-            tts_plugin = None
-            if provider == "emotion_router":
-                tts_plugin = self._get_tts_plugin_inst()
-                if not tts_plugin:
-                    logger.warning("[每日分享] 未找到语音合成插件 (astrbot_plugin_tts_emotion_router)，无法生成语音。")
-                    return None
-            
-            if tts_plugin and hasattr(tts_plugin, "_get_session_state"):
-                session_state = tts_plugin._get_session_state(target_umo)
-                
-                # 注入情感
-                if target_emotion:
-                    if hasattr(session_state, "pending_emotion"):
-                        session_state.pending_emotion = target_emotion
-                        logger.debug(f"[每日分享] 语音合成注入情绪: {target_emotion}")
-
             logger.info(f"[每日分享] 正在请求语音合成: {final_text[:20]}... (情绪: {target_emotion})")
 
             if provider == "generic_plugin":
@@ -155,16 +139,9 @@ class ContextTtsMixin:
                     target_umo=target_umo,
                     session_state=session_state,
                 )
-            
-            # 调用语音合成处理器的处理方法
-            result = await tts_plugin.tts_processor.process(final_text, session_state)
 
-            if result and result.success and result.audio_path:
-                logger.info(f"[每日分享] 语音合成成功: {result.audio_path}")
-                return str(result.audio_path)
-            else:
-                logger.warning(f"[每日分享] 语音合成失败: {getattr(result, 'error', '未知错误')}")
-                return None
+            logger.warning(f"[每日分享] 未支持的语音 provider: {provider}")
+            return None
 
         except Exception as e:
             logger.error(f"[每日分享] 调用语音合成插件出错: {e}")

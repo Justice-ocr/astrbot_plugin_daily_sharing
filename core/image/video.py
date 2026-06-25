@@ -108,34 +108,8 @@ class ImageVideoMixin:
                     target_umo=target_umo or "",
                 )
 
-            self._ensure_plugin()
-            if not self._aiimg_plugin: return None
-
-            # 强制依赖新版后端注册表架构
-            if not hasattr(self._aiimg_plugin, "registry"):
-                logger.warning("[每日分享] 检测到 GiteeAIImage 插件不支持视频后端注册表，跳过视频生成")
-                return None
-            
-            # 获取配置的视频提供商链
-            if hasattr(self._aiimg_plugin, "_get_video_chain"):
-                chain = self._aiimg_plugin._get_video_chain()
-            else:
-                logger.warning("[每日分享] 无法获取视频服务配置链")
-                return None
-            
-            if not chain:
-                logger.warning("[每日分享] 未配置视频服务提供商")
-                return None
-            
-            # 取第一个可用的提供商标识。
-            provider_id = chain[0]
-            try:
-                # 从注册表中获取后端服务并调用
-                backend = self._aiimg_plugin.registry.get_video_backend(provider_id)
-                return await backend.generate_video_url(prompt=video_prompt, image_bytes=image_bytes)
-            except Exception as e:
-                logger.error(f"[每日分享] 获取视频后端或生成失败: {e}")
-                return None
+            logger.warning(f"[每日分享] 未支持的视频 provider: {provider}")
+            return None
                 
         except Exception as e:
             logger.error(f"[每日分享] 视频生成流程异常: {e}")

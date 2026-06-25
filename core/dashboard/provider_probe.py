@@ -6,6 +6,23 @@ from typing import Any
 class DashboardProviderProbeMixin:
     """Pages LLM-tool provider probing helpers."""
 
+    _PROBE_BLOCKED_TOOL_NAMES = {
+        "send_message_to_user",
+        "daily_share",
+        "news_link",
+    }
+    _PROBE_BLOCKED_TOOL_NAME_PARTS = (
+        "send_message",
+        "message_to_user",
+        "daily_share",
+        "news_link",
+    )
+    _PROBE_BLOCKED_DESC_PARTS = (
+        "proactively message",
+        "send message to the user",
+        "target another session",
+    )
+
     _PROBE_TOOL_KEYWORDS = {
         "image": (
             "aiimg",
@@ -57,6 +74,28 @@ class DashboardProviderProbeMixin:
         ),
     }
 
+    def _page_probe_tool_name(self, tool) -> str:
+        return str(getattr(tool, "name", "") or "").strip()
+
+    def _page_probe_tool_allowed_text(self, name: str, desc: str = "") -> bool:
+        name = str(name or "").strip().lower()
+        desc = str(desc or "").lower()
+        if not name:
+            return False
+        if name in self._PROBE_BLOCKED_TOOL_NAMES:
+            return False
+        if any(part in name for part in self._PROBE_BLOCKED_TOOL_NAME_PARTS):
+            return False
+        if any(part in desc for part in self._PROBE_BLOCKED_DESC_PARTS):
+            return False
+        return True
+
+    def _page_probe_tool_allowed(self, tool) -> bool:
+        return self._page_probe_tool_allowed_text(
+            self._page_probe_tool_name(tool),
+            str(getattr(tool, "description", "") or ""),
+        )
+
     def _page_probe_target_umo(self, body: dict) -> str:
         raw = str(body.get("target_umo") or "").strip()
         if raw.count(":") >= 2:
@@ -103,6 +142,8 @@ class DashboardProviderProbeMixin:
         toolset = ToolSet()
         for tool in tools:
             if not getattr(tool, "active", True):
+                continue
+            if not self._page_probe_tool_allowed(tool):
                 continue
             name = str(getattr(tool, "name", "") or "")
             desc = str(getattr(tool, "description", "") or "")
@@ -280,6 +321,8 @@ class DashboardProviderProbeMixin:
         tool_call = calls[0]
         if not tool_call.get("ended"):
             raise RuntimeError("工具调用尚未完成，无法记录工具")
+        if not self._page_probe_tool_allowed_text(tool_call.get("tool_name", "")):
+            raise RuntimeError(f"校准命中的工具已被安全黑名单拦截：{tool_call.get('tool_name') or '未知工具'}")
         if self._page_probe_tool_result_failed(tool_call.get("result", "")):
             raise RuntimeError(f"{kind} 校准生成失败: {tool_call.get('result') or '工具没有返回结果'}")
         return {

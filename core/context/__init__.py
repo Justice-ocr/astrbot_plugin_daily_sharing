@@ -32,7 +32,6 @@ class ContextService(
 
         self._life_plugin = None
         self._memos_plugin = None
-        self._tts_plugin = None
         
         unified_conf = self.config.get("context_conf", {})
         
@@ -73,12 +72,6 @@ class ContextService(
         if not self._memos_plugin:
             self._memos_plugin = self._find_plugin("memos")
         return self._memos_plugin
-
-    def _get_tts_plugin_inst(self):
-        """获取语音合成插件实例。"""
-        if not self._tts_plugin:
-            self._tts_plugin = self._find_plugin("tts_emotion")
-        return self._tts_plugin
 
     def _is_group_chat(self, target_umo: str) -> bool:
         """判断是否为群聊"""
