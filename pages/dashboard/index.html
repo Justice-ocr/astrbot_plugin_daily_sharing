@@ -30,33 +30,51 @@
     <div id="sakuraLayer" class="sakura-layer" aria-hidden="true"></div>
     <div id="cursorTrailLayer" class="cursor-trail-layer" aria-hidden="true"></div>
 
-    <main class="shell app-shell">
+    <main class="app-shell">
       <section id="dashboardView" class="page-view dashboard-view">
-      <header class="topbar sky-hero dashboard-hero">
-        <div class="topbar-title">
-          <p class="eyebrow">Daily Sharing Console</p>
-          <h1>每日分享仪表盘</h1>
-        </div>
-        <nav class="view-tabs" aria-label="页面切换">
-          <button class="view-tab active" type="button" data-view-target="dashboard" aria-pressed="true">仪表盘</button>
-          <button id="settingsPageButton" class="view-tab" type="button" data-view-target="settings" aria-pressed="false">配置页</button>
-          <button
-            id="sakuraToggle"
-            class="ambient-toggle"
-            type="button"
-            role="switch"
-            aria-checked="true"
-            data-sakura-toggle
-          >光效</button>
-        </nav>
-      </header>
+        <header class="page-hero dashboard-hero">
+          <div class="hero-copy">
+            <span class="eyebrow">Daily Sharing</span>
+            <h1>每日分享</h1>
+          </div>
+          <nav class="view-tabs" aria-label="页面切换">
+            <button class="view-tab active" type="button" data-view-target="dashboard" aria-pressed="true">仪表盘</button>
+            <button id="settingsPageButton" class="view-tab" type="button" data-view-target="settings" aria-pressed="false">配置</button>
+            <button id="sakuraToggle" class="ambient-toggle" type="button" role="switch" aria-checked="true" data-sakura-toggle>光效</button>
+          </nav>
+        </header>
 
-      <section class="workspace dashboard-workspace">
-        <div class="primary-column">
-          <div class="control-grid">
-            <section class="panel action-panel dashboard-card dashboard-card-action" aria-label="手动分享">
+        <section class="dashboard-workspace workspace">
+          <div class="primary-column">
+            <section class="panel status-panel" aria-label="状态概览">
               <div class="panel-head">
-                <p class="panel-kicker">Manual Trigger</p>
+                <span class="panel-kicker">Status</span>
+                <h2>运行状态</h2>
+              </div>
+              <div class="status-layout">
+                <section id="targetCarousel" class="target-carousel-card" aria-label="目标状态轮播">
+                  <div class="target-carousel-head">
+                    <span class="target-carousel-label">目标</span>
+                  </div>
+                  <div class="target-carousel-name-row">
+                    <span id="targetCarouselKind" class="target-carousel-kind">--</span>
+                    <strong id="targetCarouselName" class="target-carousel-name">--</strong>
+                  </div>
+                  <div id="targetCarouselStats" class="target-stats target-carousel-stats"></div>
+                </section>
+                <div class="status-stack">
+                  <div id="shareProgressLine" class="share-progress-line" aria-label="分享进度"></div>
+                  <div id="nextShareLine" class="next-share-line" aria-label="下次分享"></div>
+                  <div id="settingsSummary" class="settings-summary" aria-label="设置摘要"></div>
+                </div>
+              </div>
+              <dl class="config-list" id="configList"></dl>
+              <div id="configInsightList" class="config-insights"></div>
+            </section>
+
+            <section class="panel action-panel" aria-label="手动分享">
+              <div class="panel-head">
+                <span class="panel-kicker">Manual</span>
                 <h2>手动分享</h2>
               </div>
               <form id="runForm" class="run-form">
@@ -93,104 +111,82 @@
                     <option value="">自动</option>
                   </select>
                 </label>
-                <button id="runButton" class="primary" type="submit">
+                <button id="runButton" class="primary run-submit" type="submit">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>
-                  分享
+                  开始
                 </button>
               </form>
               <section class="recent-actions" aria-label="今日分享">
                 <div class="recent-actions-head">
-                  <span>今日分享</span>
+                  <span>今日</span>
                 </div>
                 <div id="recentActionsList" class="recent-actions-list"></div>
               </section>
             </section>
+          </div>
 
-            <section class="panel config-panel dashboard-card dashboard-card-status" aria-label="状态概览">
+          <aside class="side-column">
+            <section class="panel calendar-panel" aria-label="下一次任务日历">
               <div class="panel-head">
-                <p class="panel-kicker">Live Status</p>
-                <h2>状态概览</h2>
+                <span class="panel-kicker">Schedule</span>
+                <h2>任务日历</h2>
               </div>
-              <section id="targetCarousel" class="target-carousel-card" aria-label="目标状态轮播">
-                <div class="target-carousel-head">
-                  <span class="target-carousel-label">目标状态</span>
-                </div>
-                <div class="target-carousel-name-row">
-                  <span id="targetCarouselKind" class="target-carousel-kind">--</span>
-                  <strong id="targetCarouselName" class="target-carousel-name">--</strong>
-                </div>
-                <div id="targetCarouselStats" class="target-stats target-carousel-stats"></div>
-              </section>
-              <dl class="config-list" id="configList"></dl>
-              <div id="settingsSummary" class="settings-summary" aria-label="设置摘要"></div>
-              <div id="nextShareLine" class="next-share-line" aria-label="下次分享"></div>
-              <div id="shareProgressLine" class="share-progress-line" aria-label="分享进度"></div>
-              <div id="configInsightList" class="config-insights"></div>
+              <div id="calendarList" class="calendar-list"></div>
             </section>
-          </div>
+          </aside>
+        </section>
 
-        </div>
-
-        <aside class="side-column">
-          <section class="panel calendar-panel dashboard-card dashboard-card-calendar" aria-label="下一次任务日历">
-            <div class="panel-head">
-              <p class="panel-kicker">Schedule</p>
-              <h2>任务日历</h2>
+        <section class="panel media-panel" aria-label="历史发送记录">
+          <div class="panel-head media-filterbar" aria-label="动态过滤">
+            <div class="history-title">
+              <span class="panel-kicker">History</span>
+              <h2>发送记录</h2>
             </div>
-            <div id="calendarList" class="calendar-list"></div>
-          </section>
-        </aside>
-
-      </section>
-
-      <section class="panel wide media-panel dashboard-card dashboard-card-history" aria-label="历史发送记录">
-        <div class="panel-head media-filterbar" aria-label="动态过滤">
-          <div class="history-title">
-            <p class="panel-kicker">History</p>
-            <h2>历史发送记录</h2>
-          </div>
-          <div id="mediaStats" class="media-stats" aria-label="动态统计"></div>
-          <div class="media-filter-controls">
-            <div class="segments media-kind-filter" role="group" aria-label="动态内容">
-              <button class="segment active" type="button" data-media-kind="all" aria-pressed="true">全部</button>
-              <button class="segment" type="button" data-media-kind="text" aria-pressed="false">文案</button>
-              <button class="segment" type="button" data-media-kind="image" aria-pressed="false">图片</button>
-              <button class="segment" type="button" data-media-kind="video" aria-pressed="false">视频</button>
+            <div id="mediaStats" class="media-stats" aria-label="动态统计"></div>
+            <div class="media-filter-controls">
+              <div class="segments media-kind-filter" role="group" aria-label="动态内容">
+                <button class="segment active" type="button" data-media-kind="all" aria-pressed="true">全部</button>
+                <button class="segment" type="button" data-media-kind="text" aria-pressed="false">文案</button>
+                <button class="segment" type="button" data-media-kind="image" aria-pressed="false">图片</button>
+                <button class="segment" type="button" data-media-kind="video" aria-pressed="false">视频</button>
+              </div>
+              <select id="mediaTypeFilter" class="compact-select media-type-filter" aria-label="动态类型">
+                <option value="all">全部类型</option>
+                <option value="auto">自动</option>
+                <option value="greeting">问候</option>
+                <option value="news">新闻</option>
+                <option value="briefing">早报</option>
+                <option value="mood">心情</option>
+                <option value="knowledge">知识</option>
+                <option value="recommendation">推荐</option>
+              </select>
             </div>
-            <select id="mediaTypeFilter" class="compact-select media-type-filter" aria-label="动态类型">
-              <option value="all">全部类型</option>
-              <option value="auto">自动</option>
-              <option value="greeting">问候</option>
-              <option value="news">新闻</option>
-              <option value="briefing">早报</option>
-              <option value="mood">心情</option>
-              <option value="knowledge">知识</option>
-              <option value="recommendation">推荐</option>
-            </select>
           </div>
-        </div>
-        <div id="mediaList" class="media-grid"></div>
-        <div class="media-actions">
-          <button id="mediaButton" class="text-button media-load-more" type="button">加载更多</button>
-        </div>
-      </section>
+          <div id="mediaList" class="media-grid"></div>
+          <div class="media-actions">
+            <button id="mediaButton" class="text-button media-load-more" type="button">加载更多</button>
+          </div>
+        </section>
       </section>
 
       <section id="settingsView" class="page-view settings-view">
-        <header class="topbar sky-hero settings-topbar">
-          <div class="topbar-title">
-            <p class="eyebrow">Configuration</p>
-            <h1>每日分享配置页</h1>
+        <header class="page-hero settings-hero">
+          <div class="hero-copy">
+            <span class="eyebrow">Configuration</span>
+            <h1>配置</h1>
           </div>
           <nav class="view-tabs" aria-label="页面切换">
             <button id="settingsBackButton" class="view-tab" type="button" data-view-target="dashboard" aria-pressed="false">仪表盘</button>
-            <button class="view-tab active" type="button" data-view-target="settings" aria-pressed="true">配置页</button>
+            <button class="view-tab active" type="button" data-view-target="settings" aria-pressed="true">配置</button>
           </nav>
           <div class="settings-actions" aria-label="配置操作">
-            <button id="reloadConfigButton" class="text-button" type="button">重载配置</button>
-            <button id="saveConfigButton" class="primary" type="submit" form="configForm" disabled>保存配置</button>
+            <button id="reloadConfigButton" class="text-button" type="button">重载</button>
+            <button id="saveConfigButton" class="primary" type="submit" form="configForm" disabled>保存</button>
           </div>
-          <div class="settings-map" aria-label="配置分区导航">
+        </header>
+
+        <section class="settings-workspace">
+          <aside class="settings-map" aria-label="配置分区导航">
             <button class="settings-map-item active" type="button" data-settings-jump="target">目标</button>
             <button class="settings-map-item" type="button" data-settings-jump="basic">基础</button>
             <button class="settings-map-item" type="button" data-settings-jump="sequence">序列</button>
@@ -204,13 +200,18 @@
             <button class="settings-map-item" type="button" data-settings-jump="qzone">空间</button>
             <button class="settings-map-item" type="button" data-settings-jump="qzoneSequence">空间序列</button>
             <button class="settings-map-item" type="button" data-settings-jump="llm">模型</button>
-          </div>
-        </header>
+          </aside>
 
-        <section class="panel settings-panel" aria-label="设置">
+          <section class="panel settings-panel" aria-label="设置">
           <form id="configForm" class="settings-form">
             <section class="settings-section active" data-settings-section="target" aria-label="目标设置">
               <h2 class="settings-section-title">目标</h2>
+              <div class="legacy-target-fields" hidden>
+                <textarea id="cfgTargetGroups"></textarea>
+                <textarea id="cfgTargetUsers"></textarea>
+                <textarea id="cfgBriefingGroups"></textarea>
+                <textarea id="cfgBriefingUsers"></textarea>
+              </div>
               <div class="target-schema-guide" aria-label="目标独立配置说明">
                 <article>
                   <strong id="targetGroupsGuideTitle">群聊独立配置</strong>
@@ -778,6 +779,7 @@
               </label>
             </section>
           </form>
+        </section>
         </section>
       </section>
     </main>
