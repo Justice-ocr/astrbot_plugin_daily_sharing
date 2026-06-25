@@ -30,13 +30,17 @@
     <div id="sakuraLayer" class="sakura-layer" aria-hidden="true"></div>
     <div id="cursorTrailLayer" class="cursor-trail-layer" aria-hidden="true"></div>
 
-    <main class="shell">
+    <main class="shell app-shell">
       <section id="dashboardView" class="page-view dashboard-view">
-      <header class="topbar">
+      <header class="topbar sky-hero dashboard-hero">
         <div class="topbar-title">
-          <p class="eyebrow">愿此见闻温柔你的日常</p>
-          <h1>仪表盘</h1>
+          <p class="eyebrow">Daily Sharing Console</p>
+          <h1>每日分享仪表盘</h1>
         </div>
+        <nav class="view-tabs" aria-label="页面切换">
+          <button class="view-tab active" type="button" data-view-target="dashboard" aria-pressed="true">仪表盘</button>
+          <button id="settingsPageButton" class="view-tab" type="button" data-view-target="settings" aria-pressed="false">配置页</button>
+        </nav>
         <div class="hanging-controls" aria-label="页面挂件">
           <button
             id="sakuraToggle"
@@ -52,25 +56,15 @@
               <span class="sakura-toggle-state"></span>
             </span>
           </button>
-          <button
-            id="settingsPageButton"
-            class="sakura-toggle settings-toggle"
-            type="button"
-            aria-label="打开设置页"
-          >
-            <span class="sakura-toggle-pull" aria-hidden="true">
-              <span class="sakura-toggle-flower settings-toggle-icon">⚙️</span>
-              <span class="sakura-toggle-state"></span>
-            </span>
-          </button>
         </div>
       </header>
 
-      <section class="workspace">
+      <section class="workspace dashboard-workspace">
         <div class="primary-column">
           <div class="control-grid">
-            <section class="panel action-panel" aria-label="手动分享">
+            <section class="panel action-panel dashboard-card dashboard-card-action" aria-label="手动分享">
               <div class="panel-head">
+                <p class="panel-kicker">Manual Trigger</p>
                 <h2>手动分享</h2>
               </div>
               <form id="runForm" class="run-form">
@@ -120,9 +114,10 @@
               </section>
             </section>
 
-            <section class="panel config-panel" aria-label="状态概览">
+            <section class="panel config-panel dashboard-card dashboard-card-status" aria-label="状态概览">
               <div class="panel-head">
-                <h2>状态</h2>
+                <p class="panel-kicker">Live Status</p>
+                <h2>状态概览</h2>
               </div>
               <section id="targetCarousel" class="target-carousel-card" aria-label="目标状态轮播">
                 <div class="target-carousel-head">
@@ -145,9 +140,10 @@
         </div>
 
         <aside class="side-column">
-          <section class="panel calendar-panel" aria-label="下一次任务日历">
+          <section class="panel calendar-panel dashboard-card dashboard-card-calendar" aria-label="下一次任务日历">
             <div class="panel-head">
-              <h2>日历</h2>
+              <p class="panel-kicker">Schedule</p>
+              <h2>任务日历</h2>
             </div>
             <div id="calendarList" class="calendar-list"></div>
           </section>
@@ -155,8 +151,12 @@
 
       </section>
 
-      <section class="panel wide media-panel" aria-label="媒体预览">
+      <section class="panel wide media-panel dashboard-card dashboard-card-history" aria-label="历史发送记录">
         <div class="panel-head media-filterbar" aria-label="动态过滤">
+          <div class="history-title">
+            <p class="panel-kicker">History</p>
+            <h2>历史发送记录</h2>
+          </div>
           <div id="mediaStats" class="media-stats" aria-label="动态统计"></div>
           <div class="media-filter-controls">
             <div class="segments media-kind-filter" role="group" aria-label="动态内容">
@@ -185,10 +185,18 @@
       </section>
 
       <section id="settingsView" class="page-view settings-view">
-        <header class="topbar settings-topbar">
+        <header class="topbar sky-hero settings-topbar">
           <div class="topbar-title">
-            <p class="eyebrow">愿此见闻温柔你的日常</p>
-            <h1>设置</h1>
+            <p class="eyebrow">Configuration</p>
+            <h1>每日分享配置页</h1>
+          </div>
+          <nav class="view-tabs" aria-label="页面切换">
+            <button id="settingsBackButton" class="view-tab" type="button" data-view-target="dashboard" aria-pressed="false">仪表盘</button>
+            <button class="view-tab active" type="button" data-view-target="settings" aria-pressed="true">配置页</button>
+          </nav>
+          <div class="settings-actions" aria-label="配置操作">
+            <button id="reloadConfigButton" class="text-button" type="button">重载配置</button>
+            <button id="saveConfigButton" class="primary" type="submit" form="configForm" disabled>保存配置</button>
           </div>
           <div class="hanging-controls settings-hanging-controls" aria-label="设置页挂件">
             <button
@@ -205,17 +213,18 @@
                 <span class="sakura-toggle-state"></span>
               </span>
             </button>
-            <button
-              id="settingsBackButton"
-              class="sakura-toggle settings-toggle dashboard-toggle"
-              type="button"
-              aria-label="返回仪表盘"
-            >
-              <span class="sakura-toggle-pull" aria-hidden="true">
-                <span class="sakura-toggle-flower settings-toggle-icon">📊</span>
-                <span class="sakura-toggle-state"></span>
-              </span>
-            </button>
+          </div>
+          <div class="settings-map" aria-label="配置分区导航">
+            <button class="settings-map-item active" type="button" data-settings-jump="target">目标</button>
+            <button class="settings-map-item" type="button" data-settings-jump="basic">基础</button>
+            <button class="settings-map-item" type="button" data-settings-jump="sequence">序列</button>
+            <button class="settings-map-item" type="button" data-settings-jump="context">上下文</button>
+            <button class="settings-map-item" type="button" data-settings-jump="content">内容</button>
+            <button class="settings-map-item" type="button" data-settings-jump="media">媒体</button>
+            <button class="settings-map-item" type="button" data-settings-jump="tts">语音</button>
+            <button class="settings-map-item" type="button" data-settings-jump="news">新闻</button>
+            <button class="settings-map-item" type="button" data-settings-jump="qzone">空间</button>
+            <button class="settings-map-item" type="button" data-settings-jump="llm">模型</button>
           </div>
         </header>
 

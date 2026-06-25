@@ -523,6 +523,11 @@ export function createSettingsConfig({
     for (const section of el.settingsSections) {
       section.classList.toggle("active", section.dataset.settingsSection === state.settingsTab);
     }
+    document.querySelectorAll("[data-settings-jump]").forEach((button) => {
+      const active = button instanceof HTMLButtonElement && button.dataset.settingsJump === state.settingsTab;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
     if (sync) {
       closeSweetSelects();
       syncSweetSelects();

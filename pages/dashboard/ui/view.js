@@ -62,6 +62,11 @@ export function createViewController({
     if (persist) void saveActiveViewPreference(nextView);
     el.dashboardView.hidden = nextView !== "dashboard";
     el.settingsView.hidden = nextView !== "settings";
+    document.querySelectorAll("[data-view-target]").forEach((button) => {
+      const active = button instanceof HTMLButtonElement && button.dataset.viewTarget === nextView;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
     document.body.classList.toggle("is-settings-view", nextView === "settings");
     if (ready) markActiveViewReady();
     if (nextView !== "dashboard") {
@@ -108,10 +113,17 @@ export function createViewController({
     if (state.pageSwitchBound) return;
     state.pageSwitchBound = true;
     document.addEventListener("click", (event) => {
-      const button = event.target?.closest?.("#settingsPageButton, #settingsBackButton");
+      const jumpButton = event.target?.closest?.("[data-settings-jump]");
+      if (jumpButton instanceof HTMLButtonElement && !jumpButton.disabled) {
+        event.preventDefault();
+        setSettingsTab(jumpButton.dataset.settingsJump || "target");
+        return;
+      }
+
+      const button = event.target?.closest?.("#settingsPageButton, #settingsBackButton, [data-view-target]");
       if (!(button instanceof HTMLButtonElement) || button.disabled) return;
       event.preventDefault();
-      if (button.id === "settingsPageButton") {
+      if (button.dataset.viewTarget === "settings" || button.id === "settingsPageButton") {
         openSettingsPage();
       } else {
         openDashboardPage();
