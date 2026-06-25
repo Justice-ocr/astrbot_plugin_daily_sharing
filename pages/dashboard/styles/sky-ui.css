@@ -1,187 +1,203 @@
 :root {
-  --sky-ink: #24324a;
-  --sky-muted: #64748b;
-  --sky-line: rgba(126, 166, 211, 0.24);
-  --sky-panel: rgba(255, 255, 255, 0.74);
-  --sky-panel-strong: rgba(255, 255, 255, 0.9);
-  --sky-blue: #4f9ee8;
-  --sky-cyan: #69c7df;
-  --sky-rose: #f08aa5;
-  --sky-peach: #ffd19a;
-  --sky-shadow: 0 22px 60px rgba(61, 112, 168, 0.18);
-  --sky-soft-shadow: 0 12px 34px rgba(83, 137, 190, 0.13);
+  color-scheme: light;
+  --sky-ink: #1f324f;
+  --sky-text: #273d5d;
+  --sky-muted: #66809a;
+  --sky-faint: #8fa4b8;
+  --sky-line: rgba(83, 141, 199, 0.18);
+  --sky-panel: rgba(255, 255, 255, 0.72);
+  --sky-panel-solid: rgba(255, 255, 255, 0.92);
+  --sky-blue: #4aa3f0;
+  --sky-blue-dark: #2b6fb4;
+  --sky-cyan: #67c8df;
+  --sky-violet: #8d93df;
+  --sky-sun: #ffd28b;
+  --sky-rose: #f2a1b3;
+  --sky-shadow: 0 26px 70px rgba(54, 105, 164, 0.18);
+  --sky-shadow-soft: 0 12px 34px rgba(54, 105, 164, 0.12);
+  --bg: #edf8ff;
   --page-bg:
-    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.96) 0 8%, transparent 9%),
-    radial-gradient(circle at 84% 12%, rgba(255, 209, 154, 0.48) 0 8%, transparent 9%),
-    linear-gradient(180deg, #e9f7ff 0%, #f8fbff 36%, #fff8ef 68%, #fff7fb 100%);
+    radial-gradient(circle at 73% 10%, rgba(255, 218, 148, 0.72) 0 6%, transparent 7%),
+    radial-gradient(ellipse at 18% 18%, rgba(255, 255, 255, 0.78) 0 14%, transparent 15%),
+    linear-gradient(180deg, #dff4ff 0%, #f5fbff 36%, #fff6e8 74%, #f9fbff 100%);
   --surface: var(--sky-panel);
-  --surface-soft: rgba(233, 247, 255, 0.76);
-  --surface-warm: rgba(255, 248, 238, 0.78);
-  --text: var(--sky-ink);
+  --surface-soft: rgba(234, 247, 255, 0.78);
+  --surface-warm: rgba(255, 247, 231, 0.78);
+  --text: var(--sky-text);
   --muted: var(--sky-muted);
   --line: var(--sky-line);
   --accent: var(--sky-blue);
-  --accent-strong: #2f73bd;
-  --accent-soft: rgba(225, 244, 255, 0.86);
+  --accent-strong: var(--sky-blue-dark);
+  --accent-soft: rgba(224, 244, 255, 0.86);
   --blue: var(--sky-blue);
-  --blue-soft: rgba(229, 245, 255, 0.92);
-  --mint: #4fb8a5;
-  --mint-soft: rgba(227, 249, 244, 0.86);
-  --shadow: var(--sky-soft-shadow);
+  --blue-soft: rgba(224, 244, 255, 0.86);
+  --mint: #47b8a5;
+  --mint-soft: rgba(224, 249, 244, 0.84);
+  --amber: #c8873c;
+  --amber-soft: rgba(255, 239, 211, 0.86);
+  --danger: #c75569;
+  --danger-soft: rgba(255, 229, 236, 0.86);
+  --shadow: var(--sky-shadow-soft);
+}
+
+html,
+body {
+  background: var(--page-bg);
+}
+
+body {
+  color: var(--sky-text);
+}
+
+body::before {
+  background:
+    linear-gradient(115deg, transparent 0 51%, rgba(255, 255, 255, 0.42) 52% 54%, transparent 55%),
+    radial-gradient(ellipse at 26% 17%, rgba(255, 255, 255, 0.72) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 64% 26%, rgba(255, 255, 255, 0.46) 0 11%, transparent 12%),
+    var(--page-bg);
 }
 
 body::after {
   position: fixed;
-  inset: 0;
+  inset: auto 0 0;
   z-index: 0;
+  height: 34vh;
   content: "";
   pointer-events: none;
   background:
-    linear-gradient(115deg, transparent 0 54%, rgba(255, 255, 255, 0.46) 55% 57%, transparent 58%),
-    radial-gradient(ellipse at 28% 22%, rgba(255, 255, 255, 0.68) 0 12%, transparent 13%),
-    radial-gradient(ellipse at 72% 28%, rgba(255, 255, 255, 0.48) 0 10%, transparent 11%);
-  opacity: 0.82;
+    linear-gradient(170deg, transparent 0 43%, rgba(98, 161, 213, 0.15) 44% 46%, transparent 47%),
+    linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.46));
+}
+
+.cursor-trail-layer,
+.sakura-layer {
+  display: none;
 }
 
 .app-shell {
   position: relative;
   z-index: 1;
+  max-width: 1440px;
 }
 
 .sky-hero {
   position: relative;
   overflow: hidden;
-  flex-wrap: wrap;
-  min-height: 164px;
-  padding: 24px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  min-height: 150px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 26px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
   border-radius: 8px;
   background:
     radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.96) 0 13%, transparent 14%),
-    radial-gradient(circle at 84% 18%, rgba(255, 209, 154, 0.42) 0 16%, transparent 17%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(224, 244, 255, 0.78) 48%, rgba(255, 246, 235, 0.82));
+    radial-gradient(circle at 86% 14%, rgba(255, 210, 139, 0.5) 0 15%, transparent 16%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(226, 246, 255, 0.78) 48%, rgba(255, 245, 228, 0.86));
   box-shadow: var(--sky-shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(22px);
 }
 
 .sky-hero::before {
   position: absolute;
-  right: -80px;
-  bottom: -120px;
-  width: 360px;
-  height: 260px;
+  right: -150px;
+  bottom: -180px;
+  width: 520px;
+  height: 340px;
   content: "";
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 211, 154, 0.42), transparent 68%);
+  background: radial-gradient(circle, rgba(255, 211, 142, 0.44), transparent 68%);
 }
 
 .sky-hero::after {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 48px;
+  inset: auto 0 0;
+  height: 52px;
   content: "";
   background:
-    linear-gradient(170deg, transparent 0 38%, rgba(107, 185, 226, 0.18) 39% 42%, transparent 43%),
-    linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.5));
+    linear-gradient(172deg, transparent 0 39%, rgba(75, 151, 221, 0.16) 40% 42%, transparent 43%),
+    linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.52));
 }
 
 .topbar-title,
 .view-tabs,
 .settings-actions,
-.hanging-controls {
+.settings-map {
   position: relative;
   z-index: 2;
 }
 
 .topbar-title {
-  display: grid;
-  gap: 6px;
+  min-width: 0;
 }
 
 .eyebrow {
-  color: #3a87c8;
+  margin: 0 0 5px;
+  color: #2b7fc4;
   font-size: 12px;
-  letter-spacing: 0.08em;
+  font-weight: 900;
+  letter-spacing: 0.1em;
 }
 
 h1 {
-  color: #233551;
-  font-size: clamp(26px, 3.4vw, 42px);
+  color: var(--sky-ink);
+  font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 900;
+}
+
+h2 {
+  color: #263b59;
+}
+
+.view-tabs,
+.settings-actions,
+.settings-map {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(14px);
 }
 
 .view-tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   padding: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.52);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
-.settings-map {
-  position: relative;
-  z-index: 2;
-  flex-basis: 100%;
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-  overflow-x: auto;
-  padding: 4px 2px 2px;
-  scrollbar-width: thin;
-}
-
-.settings-map-item {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.44);
-  color: #50687f;
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.settings-map-item:hover {
-  border-color: rgba(79, 158, 232, 0.3);
-  background: rgba(255, 255, 255, 0.68);
-}
-
-.settings-map-item.active,
-.settings-map-item[aria-pressed="true"] {
-  border-color: rgba(79, 158, 232, 0.38);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(229, 246, 255, 0.9));
-  color: #245f9b;
-  box-shadow: 0 8px 18px rgba(59, 128, 194, 0.12);
-}
-
-.view-tab {
+.view-tab,
+.settings-map-item,
+.ambient-toggle {
   min-height: 36px;
-  padding: 0 16px;
+  padding: 0 15px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: #496177;
+  color: #4d647c;
   font-size: 14px;
   font-weight: 850;
   letter-spacing: 0;
 }
 
-.view-tab:hover {
-  border-color: rgba(79, 158, 232, 0.28);
-  background: rgba(255, 255, 255, 0.62);
+.view-tab:hover,
+.settings-map-item:hover,
+.ambient-toggle:hover {
+  border-color: rgba(74, 163, 240, 0.25);
+  background: rgba(255, 255, 255, 0.68);
 }
 
 .view-tab.active,
-.view-tab[aria-pressed="true"] {
-  border-color: rgba(79, 158, 232, 0.34);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(226, 245, 255, 0.9));
-  color: #245f9b;
-  box-shadow: 0 8px 18px rgba(59, 128, 194, 0.14);
+.view-tab[aria-pressed="true"],
+.settings-map-item.active,
+.settings-map-item[aria-pressed="true"],
+.ambient-toggle.is-on {
+  border-color: rgba(74, 163, 240, 0.34);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(225, 245, 255, 0.92));
+  color: #246aa8;
+  box-shadow: 0 10px 22px rgba(58, 128, 194, 0.13);
 }
 
 .settings-actions {
@@ -189,32 +205,77 @@ h1 {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  padding: 5px;
+}
+
+.settings-map {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 6px;
+  scrollbar-width: thin;
+}
+
+.settings-map-item {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
 }
 
 .dashboard-workspace {
-  grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.82fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.82fr);
+  gap: 18px;
 }
 
 .control-grid {
-  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
-  gap: 16px;
+  grid-template-columns: minmax(330px, 0.9fr) minmax(390px, 1.1fr);
+  gap: 18px;
 }
 
+.primary-column,
+.side-column {
+  gap: 18px;
+}
+
+.panel,
 .dashboard-card,
-.settings-section,
 .media-lightbox-content,
 .text-lightbox-panel {
-  border-color: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.66)),
     rgba(255, 255, 255, 0.48);
-  box-shadow: var(--sky-soft-shadow);
+  box-shadow: var(--sky-shadow-soft);
   backdrop-filter: blur(18px);
 }
 
 .dashboard-card {
   padding: 18px;
+}
+
+.dashboard-card-action {
+  background:
+    radial-gradient(circle at 82% 0%, rgba(103, 200, 223, 0.22), transparent 25%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(239, 249, 255, 0.72));
+}
+
+.dashboard-card-status {
+  background:
+    radial-gradient(circle at 86% 8%, rgba(255, 210, 139, 0.28), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 252, 255, 0.7));
+}
+
+.dashboard-card-calendar {
+  position: sticky;
+  top: 18px;
+}
+
+.dashboard-card-history {
+  margin-top: 18px;
 }
 
 .panel-head {
@@ -223,38 +284,22 @@ h1 {
 
 .panel-kicker {
   margin: 0 0 4px;
-  color: #4f9ee8;
+  color: #348bd1;
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .panel-head h2,
 .history-title h2 {
-  color: #293b56;
-  font-size: 17px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
 }
 
-.dashboard-card-action {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(239, 249, 255, 0.72)),
-    rgba(255, 255, 255, 0.58);
-}
-
-.dashboard-card-status {
-  background:
-    radial-gradient(circle at 84% 10%, rgba(255, 209, 154, 0.24), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 251, 255, 0.7));
-}
-
-.dashboard-card-calendar {
-  position: sticky;
-  top: 16px;
-}
-
-.dashboard-card-history {
-  margin-top: 16px;
+.run-form {
+  gap: 12px;
 }
 
 .media-filterbar {
@@ -268,14 +313,6 @@ h1 {
   min-width: 0;
 }
 
-.history-title .panel-kicker {
-  margin-bottom: 2px;
-}
-
-.run-form {
-  gap: 12px;
-}
-
 .primary,
 .text-button,
 .button-secondary,
@@ -286,13 +323,16 @@ h1 {
 
 .primary {
   border-color: rgba(43, 124, 202, 0.34);
-  background: linear-gradient(135deg, #4f9ee8, #6fc9df);
+  background: linear-gradient(135deg, var(--sky-blue), var(--sky-cyan));
   color: #fff;
   box-shadow: 0 12px 24px rgba(69, 145, 214, 0.22);
 }
 
-.primary:hover {
-  filter: saturate(1.05) brightness(1.02);
+.text-button,
+.button-secondary,
+.segment {
+  border-color: rgba(83, 141, 199, 0.18);
+  background: rgba(255, 255, 255, 0.58);
 }
 
 input,
@@ -304,39 +344,80 @@ textarea,
 }
 
 .settings-panel {
-  margin-top: 16px;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .settings-form {
-  gap: 18px;
+  display: block;
+  min-height: 520px;
 }
 
 .settings-section {
-  border-color: rgba(255, 255, 255, 0.66);
+  display: none;
+  width: 100%;
+  min-height: 520px;
+  padding: 24px;
+  border-color: rgba(255, 255, 255, 0.7);
   background:
-    radial-gradient(circle at 96% 0%, rgba(255, 209, 154, 0.18), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.64));
+    radial-gradient(circle at 96% 0%, rgba(255, 210, 139, 0.18), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  box-shadow: var(--sky-shadow);
+}
+
+.settings-section.active {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px 18px;
+  animation: skySectionIn 260ms ease both;
 }
 
 .settings-section::before {
   height: 3px;
-  background: linear-gradient(90deg, var(--section-accent), rgba(105, 199, 223, 0.3), transparent);
+  background: linear-gradient(90deg, var(--section-accent), rgba(103, 200, 223, 0.32), transparent);
 }
 
 .settings-section-title {
-  color: #293b56;
+  color: #263b59;
+  border-bottom-color: rgba(83, 141, 199, 0.16);
 }
 
 .setting-field > span,
-.setting-switch > span {
-  color: #52657c;
+.setting-switch > span,
+.config-list dt,
+.item-meta,
+.muted {
+  color: var(--sky-muted);
+}
+
+.target-schema-guide article,
+.settings-target-editor,
+.provider-probe-panel {
+  border-color: rgba(83, 141, 199, 0.16);
+  background: rgba(255, 255, 255, 0.56);
 }
 
 .notice {
   border-radius: 8px;
 }
 
+@keyframes skySectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1180px) {
+  .sky-hero,
   .dashboard-workspace,
   .control-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -355,14 +436,12 @@ textarea,
 
 @media (max-width: 760px) {
   .sky-hero {
-    align-items: stretch;
     padding: 20px 16px;
   }
 
   .view-tabs,
   .settings-actions {
     width: 100%;
-    justify-content: stretch;
   }
 
   .view-tab,
@@ -371,6 +450,10 @@ textarea,
   }
 
   .media-filterbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-section.active {
     grid-template-columns: minmax(0, 1fr);
   }
 }

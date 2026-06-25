@@ -7,20 +7,20 @@
     <link rel="stylesheet" href="./style.css?v=20260610-image-coral" />
   </head>
   <body>
-    <div id="pageBootLoader" class="page-boot-loader" role="status" aria-label="少女祈祷中...">
+    <div id="pageBootLoader" class="page-boot-loader" role="status" aria-label="页面载入中...">
       <span class="page-boot-spinner" aria-hidden="true">
         <span class="page-boot-petals">
-          <span style="--petal-index: 0">🌸</span>
+          <span style="--petal-index: 0">✦</span>
           <span style="--petal-index: 1">✦</span>
-          <span style="--petal-index: 2">🌸</span>
-          <span style="--petal-index: 3">♡</span>
+          <span style="--petal-index: 2">✧</span>
+          <span style="--petal-index: 3">✦</span>
         </span>
       </span>
       <span class="page-boot-text" aria-hidden="true">
-        <span style="--boot-index: 0">少</span>
-        <span style="--boot-index: 1">女</span>
-        <span style="--boot-index: 2">祈</span>
-        <span style="--boot-index: 3">祷</span>
+        <span style="--boot-index: 0">载</span>
+        <span style="--boot-index: 1">入</span>
+        <span style="--boot-index: 2">页</span>
+        <span style="--boot-index: 3">面</span>
         <span style="--boot-index: 4">中</span>
         <span style="--boot-index: 5">.</span>
         <span style="--boot-index: 6">.</span>
@@ -40,23 +40,15 @@
         <nav class="view-tabs" aria-label="页面切换">
           <button class="view-tab active" type="button" data-view-target="dashboard" aria-pressed="true">仪表盘</button>
           <button id="settingsPageButton" class="view-tab" type="button" data-view-target="settings" aria-pressed="false">配置页</button>
-        </nav>
-        <div class="hanging-controls" aria-label="页面挂件">
           <button
             id="sakuraToggle"
-            class="sakura-toggle"
+            class="ambient-toggle"
             type="button"
             role="switch"
             aria-checked="true"
-            aria-label="开启或关闭樱花飘落"
             data-sakura-toggle
-          >
-            <span class="sakura-toggle-pull" aria-hidden="true">
-              <span class="sakura-toggle-flower">🌸</span>
-              <span class="sakura-toggle-state"></span>
-            </span>
-          </button>
-        </div>
+          >光效</button>
+        </nav>
       </header>
 
       <section class="workspace dashboard-workspace">
@@ -198,32 +190,19 @@
             <button id="reloadConfigButton" class="text-button" type="button">重载配置</button>
             <button id="saveConfigButton" class="primary" type="submit" form="configForm" disabled>保存配置</button>
           </div>
-          <div class="hanging-controls settings-hanging-controls" aria-label="设置页挂件">
-            <button
-              id="settingsSakuraToggle"
-              class="sakura-toggle"
-              type="button"
-              role="switch"
-              aria-checked="true"
-              aria-label="开启或关闭樱花飘落"
-              data-sakura-toggle
-            >
-              <span class="sakura-toggle-pull" aria-hidden="true">
-                <span class="sakura-toggle-flower">🌸</span>
-                <span class="sakura-toggle-state"></span>
-              </span>
-            </button>
-          </div>
           <div class="settings-map" aria-label="配置分区导航">
             <button class="settings-map-item active" type="button" data-settings-jump="target">目标</button>
             <button class="settings-map-item" type="button" data-settings-jump="basic">基础</button>
             <button class="settings-map-item" type="button" data-settings-jump="sequence">序列</button>
             <button class="settings-map-item" type="button" data-settings-jump="context">上下文</button>
+            <button class="settings-map-item" type="button" data-settings-jump="briefing">早报</button>
             <button class="settings-map-item" type="button" data-settings-jump="content">内容</button>
             <button class="settings-map-item" type="button" data-settings-jump="media">媒体</button>
             <button class="settings-map-item" type="button" data-settings-jump="tts">语音</button>
+            <button class="settings-map-item" type="button" data-settings-jump="weixin">微信</button>
             <button class="settings-map-item" type="button" data-settings-jump="news">新闻</button>
             <button class="settings-map-item" type="button" data-settings-jump="qzone">空间</button>
+            <button class="settings-map-item" type="button" data-settings-jump="qzoneSequence">空间序列</button>
             <button class="settings-map-item" type="button" data-settings-jump="llm">模型</button>
           </div>
         </header>
