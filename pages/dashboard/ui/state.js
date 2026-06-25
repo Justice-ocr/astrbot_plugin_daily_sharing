@@ -11,7 +11,7 @@ export function createDashboardState() {
     configAutoSaveTimer: 0,
     configSaveQueued: false,
     configChangeSeq: 0,
-    settingsTab: "target",
+    settingsTab: "basic",
     media: [],
     mediaLoaded: false,
     mediaLimit: MEDIA_INITIAL_LIMIT,

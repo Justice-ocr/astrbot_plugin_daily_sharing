@@ -88,14 +88,14 @@ export function createViewController({
     state.activeViewSyncedFromServer = true;
     setActiveView(preferred, { persist: false, scroll: false, behavior: "auto", ready });
     if (preferred === "settings") {
-      setSettingsTab("target", { scroll: false });
+      setSettingsTab("basic", { scroll: false });
     }
     return true;
   }
 
   async function openSettingsPage() {
     setActiveView("settings");
-    setSettingsTab("target", { scroll: false });
+    setSettingsTab("basic", { scroll: false });
     if (!state.configData) {
       await loadConfig({ quiet: true });
     }

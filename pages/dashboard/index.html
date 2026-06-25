@@ -187,24 +187,74 @@
 
         <section class="settings-workspace">
           <aside class="settings-map" aria-label="配置分区导航">
-            <button class="settings-map-item active" type="button" data-settings-jump="target">目标</button>
-            <button class="settings-map-item" type="button" data-settings-jump="basic">基础</button>
-            <button class="settings-map-item" type="button" data-settings-jump="sequence">序列</button>
-            <button class="settings-map-item" type="button" data-settings-jump="context">上下文</button>
-            <button class="settings-map-item" type="button" data-settings-jump="briefing">早报</button>
+            <button class="settings-map-item active" type="button" data-settings-jump="basic">基础</button>
+            <button class="settings-map-item" type="button" data-settings-jump="target">目标</button>
+            <button class="settings-map-item" type="button" data-settings-jump="llm">模型</button>
             <button class="settings-map-item" type="button" data-settings-jump="content">内容</button>
+            <button class="settings-map-item" type="button" data-settings-jump="context">上下文</button>
+            <button class="settings-map-item" type="button" data-settings-jump="sequence" data-visible-when="cfgBasicSharingType=auto">序列</button>
             <button class="settings-map-item" type="button" data-settings-jump="media">媒体</button>
             <button class="settings-map-item" type="button" data-settings-jump="tts">语音</button>
-            <button class="settings-map-item" type="button" data-settings-jump="weixin">微信</button>
             <button class="settings-map-item" type="button" data-settings-jump="news">新闻</button>
+            <button class="settings-map-item" type="button" data-settings-jump="briefing">早报</button>
             <button class="settings-map-item" type="button" data-settings-jump="qzone">空间</button>
-            <button class="settings-map-item" type="button" data-settings-jump="qzoneSequence">空间序列</button>
-            <button class="settings-map-item" type="button" data-settings-jump="llm">模型</button>
+            <button class="settings-map-item" type="button" data-settings-jump="qzoneSequence" data-visible-when="cfgQzoneEnabled;cfgQzoneSharingType=auto">空间序列</button>
+            <button class="settings-map-item" type="button" data-settings-jump="weixin">平台</button>
           </aside>
 
           <section class="panel settings-panel" aria-label="设置">
           <form id="configForm" class="settings-form">
-            <section class="settings-section active" data-settings-section="target" aria-label="目标设置">
+            <section class="settings-section active" data-settings-section="basic" aria-label="基础设置">
+              <h2 class="settings-section-title">基础</h2>
+              <h3 class="settings-group-title">运行</h3>
+              <label class="setting-switch">
+                <input id="cfgEnabled" type="checkbox" />
+                <span>自动分享</span>
+              </label>
+              <h3 class="settings-group-title">计划</h3>
+              <label class="setting-field">
+                <span>触发模式</span>
+                <select id="cfgBasicTriggerMode">
+                  <option value="cron">定时触发</option>
+                  <option value="random_period">随机时段</option>
+                </select>
+              </label>
+              <label class="setting-field" data-visible-when="cfgBasicTriggerMode=cron">
+                <span>定时时间</span>
+                <input id="cfgBasicSharingCron" type="text" placeholder="twice 或 0 8,20 * * *" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgBasicTriggerMode=random_period">
+                <span>随机时段</span>
+                <textarea id="cfgBasicRandomPeriods" rows="3" placeholder="08:00-10:00&#10;19:00-21:00"></textarea>
+              </label>
+              <label class="setting-field" data-visible-when="cfgBasicTriggerMode=cron">
+                <span>随机延迟</span>
+                <input id="cfgBasicCronDelay" type="number" min="0" max="60" step="1" />
+              </label>
+              <label class="setting-field">
+                <span>默认类型</span>
+                <select id="cfgBasicSharingType">
+                  <option value="auto">自动</option>
+                  <option value="greeting">问候</option>
+                  <option value="news">新闻</option>
+                  <option value="mood">心情</option>
+                  <option value="knowledge">知识</option>
+                  <option value="recommendation">推荐</option>
+                </select>
+              </label>
+              <h3 class="settings-group-title">保留</h3>
+              <label class="setting-field">
+                <span>去重天数</span>
+                <input id="cfgBasicRetentionDays" type="number" min="7" max="365" step="1" />
+              </label>
+              <label class="setting-field">
+                <span>动态天数</span>
+                <input id="cfgBasicDynamicDays" type="number" min="0" max="365" step="1" />
+              </label>
+            </section>
+
+
+            <section class="settings-section" data-settings-section="target" aria-label="目标设置">
               <h2 class="settings-section-title">目标</h2>
               <div class="legacy-target-fields" hidden>
                 <textarea id="cfgTargetGroups"></textarea>
@@ -246,53 +296,113 @@
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="basic" aria-label="基础设置">
-              <h2 class="settings-section-title">基础</h2>
+
+            <section class="settings-section" data-settings-section="llm" aria-label="模型设置">
+              <h2 class="settings-section-title">模型</h2>
+              <h3 class="settings-group-title">模型服务</h3>
+              <label class="setting-field">
+                <span>模型服务商</span>
+                <input id="cfgLlmProviderId" type="text" autocomplete="off" placeholder="跟随默认" data-empty-label="跟随默认" />
+                <datalist id="cfgLlmProviderOptions"></datalist>
+              </label>
+              <label class="setting-field">
+                <span>生成超时</span>
+                <input id="cfgLlmTimeout" type="number" min="1" max="180" step="1" />
+              </label>
+              <h3 class="settings-group-title">人设</h3>
               <label class="setting-switch">
-                <input id="cfgEnabled" type="checkbox" />
-                <span>自动分享</span>
+                <input id="cfgUsePersona" type="checkbox" />
+                <span>融合人设</span>
               </label>
-              <label class="setting-field">
-                <span>触发模式</span>
-                <select id="cfgBasicTriggerMode">
-                  <option value="cron">定时触发</option>
-                  <option value="random_period">随机时段</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>定时时间</span>
-                <input id="cfgBasicSharingCron" type="text" placeholder="twice 或 0 8,20 * * *" />
-              </label>
-              <label class="setting-field">
-                <span>随机时段</span>
-                <textarea id="cfgBasicRandomPeriods" rows="3" placeholder="08:00-10:00&#10;19:00-21:00"></textarea>
-              </label>
-              <label class="setting-field">
-                <span>随机延迟</span>
-                <input id="cfgBasicCronDelay" type="number" min="0" max="60" step="1" />
-              </label>
-              <label class="setting-field">
-                <span>默认类型</span>
-                <select id="cfgBasicSharingType">
-                  <option value="auto">自动</option>
-                  <option value="greeting">问候</option>
-                  <option value="news">新闻</option>
-                  <option value="mood">心情</option>
-                  <option value="knowledge">知识</option>
-                  <option value="recommendation">推荐</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>去重天数</span>
-                <input id="cfgBasicRetentionDays" type="number" min="7" max="365" step="1" />
-              </label>
-              <label class="setting-field">
-                <span>动态天数</span>
-                <input id="cfgBasicDynamicDays" type="number" min="0" max="365" step="1" />
+              <label class="setting-field" data-visible-when="cfgUsePersona">
+                <span>人设 ID</span>
+                <input id="cfgPersonaId" type="text" autocomplete="off" placeholder="不指定人设" data-empty-label="不指定人设" />
+                <datalist id="cfgPersonaOptions"></datalist>
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="sequence" aria-label="全局序列">
+            <section class="settings-section" data-settings-section="content" aria-label="内容设置">
+              <h2 class="settings-section-title">内容</h2>
+              <label class="setting-switch">
+                <input id="cfgKnowledgePrefix" type="checkbox" />
+                <span>知识前缀</span>
+              </label>
+              <label class="setting-switch">
+                <input id="cfgRecPrefix" type="checkbox" />
+                <span>推荐前缀</span>
+              </label>
+              <label class="setting-field setting-field-wide setting-field-tall">
+                <span>知识分类</span>
+                <textarea id="cfgKnowledgeCats" rows="8"></textarea>
+              </label>
+              <label class="setting-field setting-field-wide setting-field-tall">
+                <span>推荐分类</span>
+                <textarea id="cfgRecCats" rows="8"></textarea>
+              </label>
+            </section>
+
+
+            <section class="settings-section" data-settings-section="context" aria-label="上下文设置">
+              <h2 class="settings-section-title">上下文</h2>
+              <h3 class="settings-group-title">读取范围</h3>
+              <label class="setting-field">
+                <span>参考历史数</span>
+                <input id="cfgReferenceHistoryCount" type="number" min="0" max="10" step="1" />
+              </label>
+              <label class="setting-switch">
+                <input id="cfgLifeContext" type="checkbox" />
+                <span>生活上下文</span>
+              </label>
+              <label class="setting-switch" data-visible-when="cfgLifeContext">
+                <input id="cfgLifeContextGroup" type="checkbox" />
+                <span>群聊人设</span>
+              </label>
+              <label class="setting-switch" data-visible-when="cfgLifeContext">
+                <input id="cfgGroupSchedule" type="checkbox" />
+                <span>群聊日程</span>
+              </label>
+              <label class="setting-switch">
+                <input id="cfgChatHistory" type="checkbox" />
+                <span>聊天历史</span>
+              </label>
+              <label class="setting-switch">
+                <input id="cfgDeepHistory" type="checkbox" />
+                <span>深度回溯</span>
+              </label>
+              <h3 class="settings-group-title" data-visible-when="cfgDeepHistory">回溯参数</h3>
+              <label class="setting-field" data-visible-when="cfgDeepHistory">
+                <span>回溯小时</span>
+                <input id="cfgDeepHistoryHours" type="number" min="1" max="168" step="1" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgDeepHistory">
+                <span>群聊回溯数</span>
+                <input id="cfgDeepHistoryMaxCount" type="number" min="20" max="200" step="10" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgChatHistory">
+                <span>私聊回溯数</span>
+                <input id="cfgPrivateHistoryCount" type="number" min="5" max="100" step="5" />
+              </label>
+              <h3 class="settings-group-title">群聊策略</h3>
+              <label class="setting-field">
+                <span>群聊热度范围</span>
+                <input id="cfgGroupIntensityCount" type="number" min="10" max="100" step="5" />
+              </label>
+              <label class="setting-field">
+                <span>群聊策略</span>
+                <select id="cfgGroupShareStrategy">
+                  <option value="cautious">谨慎模式</option>
+                  <option value="active">主动模式</option>
+                  <option value="minimal">最小模式</option>
+                </select>
+              </label>
+              <label class="setting-switch">
+                <input id="cfgRecordMemory" type="checkbox" />
+                <span>写入记忆</span>
+              </label>
+            </section>
+
+
+            <section class="settings-section" data-settings-section="sequence" aria-label="全局序列" data-visible-when="cfgBasicSharingType=auto">
               <h2 class="settings-section-title">序列</h2>
               <label class="setting-field">
                 <span>凌晨</span>
@@ -328,64 +438,245 @@
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="context" aria-label="上下文设置">
-              <h2 class="settings-section-title">上下文</h2>
-              <label class="setting-field">
-                <span>参考历史数</span>
-                <input id="cfgReferenceHistoryCount" type="number" min="0" max="10" step="1" />
-              </label>
+
+            <section class="settings-section" data-settings-section="media" aria-label="媒体设置">
+              <h2 class="settings-section-title">媒体</h2>
+              <h3 class="settings-group-title">配图</h3>
               <label class="setting-switch">
-                <input id="cfgLifeContext" type="checkbox" />
-                <span>生活上下文</span>
+                <input id="cfgAiImage" type="checkbox" />
+                <span>生成配图</span>
               </label>
-              <label class="setting-switch">
-                <input id="cfgLifeContextGroup" type="checkbox" />
-                <span>群聊人设</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgGroupSchedule" type="checkbox" />
-                <span>群聊日程</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgChatHistory" type="checkbox" />
-                <span>聊天历史</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgDeepHistory" type="checkbox" />
-                <span>深度回溯</span>
-              </label>
-              <label class="setting-field">
-                <span>回溯小时</span>
-                <input id="cfgDeepHistoryHours" type="number" min="1" max="168" step="1" />
-              </label>
-              <label class="setting-field">
-                <span>群聊回溯数</span>
-                <input id="cfgDeepHistoryMaxCount" type="number" min="20" max="200" step="10" />
-              </label>
-              <label class="setting-field">
-                <span>私聊回溯数</span>
-                <input id="cfgPrivateHistoryCount" type="number" min="5" max="100" step="5" />
-              </label>
-              <label class="setting-field">
-                <span>群聊热度范围</span>
-                <input id="cfgGroupIntensityCount" type="number" min="10" max="100" step="5" />
-              </label>
-              <label class="setting-field">
-                <span>群聊策略</span>
-                <select id="cfgGroupShareStrategy">
-                  <option value="cautious">谨慎模式</option>
-                  <option value="active">主动模式</option>
-                  <option value="minimal">最小模式</option>
+              <label class="setting-field" data-visible-when="cfgAiImage">
+                <span>生图 provider</span>
+                <select id="cfgImageProvider">
+                  <option value="generic_plugin">通用插件</option>
+                  <option value="calibrated_tool">校准工具</option>
                 </select>
               </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>生图插件名</span>
+                <input id="cfgGenericImagePlugin" type="text" placeholder="astrbot_plugin_aiimg_enhanced" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>生图方法</span>
+                <input id="cfgGenericImageMethod" type="text" placeholder="draw.generate" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>提示词参数</span>
+                <input id="cfgGenericImagePromptArg" type="text" placeholder="prompt" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>改图方法</span>
+                <input id="cfgGenericImageEditMethod" type="text" placeholder="edit.edit" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>改图提示词参数</span>
+                <input id="cfgGenericImageEditPromptArg" type="text" placeholder="prompt" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>结果字段</span>
+                <input id="cfgGenericImageResultField" type="text" placeholder="data.image_path" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>参考图 key</span>
+                <input id="cfgGenericImageRefKeys" type="text" placeholder="bot_selfie,selfie,default" />
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>生图额外参数</span>
+                <textarea id="cfgGenericImageExtraArgs" rows="2" placeholder='{"size":"1024x1024"}'></textarea>
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgAiImage;cfgImageProvider=generic_plugin">
+                <span>改图额外参数</span>
+                <textarea id="cfgGenericImageEditExtraArgs" rows="2" placeholder='{"backend":"default"}'></textarea>
+              </label>
+              <div class="provider-probe-panel setting-field-wide" aria-live="polite" data-visible-when="cfgAiImage;cfgImageProvider=calibrated_tool,cfgAiVideo;cfgVideoProvider=calibrated_tool,cfgTtsEnabled;cfgTtsProvider=calibrated_tool">
+                <div class="provider-probe-actions">
+                  <button id="probeImageProviderButton" class="button-secondary" type="button">校准生图</button>
+                  <button id="probeSelfieProviderButton" class="button-secondary" type="button">校准自拍</button>
+                  <button id="probeVideoProviderButton" class="button-secondary" type="button">校准视频</button>
+                  <button id="probeTtsProviderButton" class="button-secondary" type="button">校准语音</button>
+                </div>
+                <output id="providerProbeResult" class="provider-probe-result"></output>
+              </div>
+              <h3 class="settings-group-title" data-visible-when="cfgAiImage">配图策略</h3>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgHotImage" type="checkbox" />
+                <span>新闻长图</span>
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage;cfgHotImage">
+                <span>新闻图保留</span>
+                <input id="cfgNewsImageCleanupMax" type="number" min="0" max="1000" step="10" />
+              </label>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgGiteeSelfieRef" type="checkbox" />
+                <span>形象参考图</span>
+              </label>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgPriorityText" type="checkbox" />
+                <span>文案主导</span>
+              </label>
               <label class="setting-switch">
-                <input id="cfgRecordMemory" type="checkbox" />
-                <span>写入记忆</span>
+                <input id="cfgAiVideo" type="checkbox" />
+                <span>生成视频</span>
+              </label>
+              <h3 class="settings-group-title" data-visible-when="cfgAiVideo">视频</h3>
+              <label class="setting-field" data-visible-when="cfgAiVideo">
+                <span>视频 provider</span>
+                <select id="cfgVideoProvider">
+                  <option value="generic_plugin">通用插件</option>
+                  <option value="calibrated_tool">校准工具</option>
+                </select>
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiVideo;cfgVideoProvider=generic_plugin">
+                <span>视频插件名</span>
+                <input id="cfgGenericVideoPlugin" type="text" placeholder="留空复用生图插件" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiVideo;cfgVideoProvider=generic_plugin">
+                <span>视频方法</span>
+                <input id="cfgGenericVideoMethod" type="text" placeholder="video.generate" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiVideo;cfgVideoProvider=generic_plugin">
+                <span>视频结果字段</span>
+                <input id="cfgGenericVideoResultField" type="text" placeholder="data.video_url" />
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgAiVideo;cfgVideoProvider=generic_plugin">
+                <span>视频额外参数</span>
+                <textarea id="cfgGenericVideoExtraArgs" rows="2" placeholder='{"model":"default"}'></textarea>
+              </label>
+              <h3 class="settings-group-title">发送</h3>
+              <label class="setting-switch">
+                <input id="cfgSeparateMedia" type="checkbox" />
+                <span>图文分开</span>
+              </label>
+              <label class="setting-field" data-visible-when="cfgSeparateMedia">
+                <span>发送延迟</span>
+                <input id="cfgSeparateDelay" type="text" placeholder="1.0-2.0" />
+              </label>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgRecordImageDesc" type="checkbox" />
+                <span>记录描述</span>
+              </label>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgAlwaysSelf" type="checkbox" />
+                <span>始终含人物</span>
+              </label>
+              <label class="setting-switch" data-visible-when="cfgAiImage">
+                <input id="cfgNeverSelf" type="checkbox" />
+                <span>从不含人物</span>
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiImage">
+                <span>配图类型</span>
+                <textarea id="cfgImageTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
+              </label>
+              <label class="setting-field" data-visible-when="cfgAiVideo">
+                <span>视频类型</span>
+                <textarea id="cfgVideoTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
+              </label>
+              <label class="setting-field setting-field-wide setting-field-tall" data-visible-when="cfgAiImage">
+                <span>外貌提示词</span>
+                <textarea id="cfgAppearancePrompt" rows="5"></textarea>
               </label>
             </section>
 
+
+            <section class="settings-section" data-settings-section="tts" aria-label="语音设置">
+              <h2 class="settings-section-title">语音</h2>
+              <h3 class="settings-group-title">开关</h3>
+              <label class="setting-switch">
+                <input id="cfgTtsEnabled" type="checkbox" />
+                <span>语音转换</span>
+              </label>
+              <h3 class="settings-group-title" data-visible-when="cfgTtsEnabled">工具</h3>
+              <label class="setting-field" data-visible-when="cfgTtsEnabled">
+                <span>语音 provider</span>
+                <select id="cfgTtsProvider">
+                  <option value="generic_plugin">通用插件</option>
+                  <option value="calibrated_tool">校准工具</option>
+                </select>
+              </label>
+              <label class="setting-field" data-visible-when="cfgTtsEnabled;cfgTtsProvider=generic_plugin">
+                <span>语音插件名</span>
+                <input id="cfgGenericTtsPlugin" type="text" placeholder="astrbot_plugin_tts_xxx" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgTtsEnabled;cfgTtsProvider=generic_plugin">
+                <span>语音方法</span>
+                <input id="cfgGenericTtsMethod" type="text" placeholder="tts.synthesize" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgTtsEnabled;cfgTtsProvider=generic_plugin">
+                <span>文本参数名</span>
+                <input id="cfgGenericTtsTextArg" type="text" placeholder="text" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgTtsEnabled;cfgTtsProvider=generic_plugin">
+                <span>语音结果字段</span>
+                <input id="cfgGenericTtsResultField" type="text" placeholder="data.audio_path" />
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgTtsEnabled;cfgTtsProvider=generic_plugin">
+                <span>语音额外参数</span>
+                <textarea id="cfgGenericTtsExtraArgs" rows="2" placeholder='{"voice":"default"}'></textarea>
+              </label>
+              <h3 class="settings-group-title" data-visible-when="cfgTtsEnabled">发送</h3>
+              <label class="setting-switch" data-visible-when="cfgTtsEnabled">
+                <input id="cfgAudioOnly" type="checkbox" />
+                <span>仅发语音</span>
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgTtsEnabled">
+                <span>语音类型</span>
+                <textarea id="cfgTtsTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
+              </label>
+            </section>
+
+
+            <section class="settings-section" data-settings-section="news" aria-label="新闻设置">
+              <h2 class="settings-section-title">新闻</h2>
+              <h3 class="settings-group-title">来源</h3>
+              <label class="setting-switch">
+                <input id="cfgNewsApiEnabled" type="checkbox" />
+                <span>新闻 API</span>
+              </label>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled">
+                <span>柠柚接口密钥</span>
+                <input id="cfgNewsApiKey" type="text" autocomplete="off" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled">
+                <span>新闻模式</span>
+                <select id="cfgNewsMode">
+                  <option value="fixed">固定新闻源</option>
+                  <option value="random">全量随机</option>
+                  <option value="config">配置列表随机</option>
+                  <option value="time_based">按时段智能选择</option>
+                </select>
+              </label>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled;cfgNewsMode=fixed">
+                <span>固定新闻源</span>
+                <select id="cfgNewsFixedSource"></select>
+              </label>
+              <h3 class="settings-group-title" data-visible-when="cfgNewsApiEnabled">数量</h3>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled">
+                <span>获取条数</span>
+                <input id="cfgNewsItemsCount" type="number" min="1" max="20" step="1" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled">
+                <span>分享条数</span>
+                <input id="cfgNewsShareCount" type="text" placeholder="1-2" />
+              </label>
+              <label class="setting-field" data-visible-when="cfgNewsApiEnabled">
+                <span>API 超时</span>
+                <input id="cfgNewsApiTimeout" type="number" min="1" max="60" step="1" />
+              </label>
+              <label class="setting-switch" data-visible-when="cfgNewsApiEnabled">
+                <input id="cfgNewsWebSearch" type="checkbox" />
+                <span>联网补充</span>
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgNewsApiEnabled;cfgNewsMode=config|time_based">
+                <span>随机新闻源</span>
+                <textarea id="cfgNewsRandomSources" rows="5" placeholder="zhihu&#10;weibo&#10;bili"></textarea>
+              </label>
+            </section>
+
+
             <section class="settings-section" data-settings-section="briefing" aria-label="早报设置">
               <h2 class="settings-section-title">早报</h2>
+              <h3 class="settings-group-title">来源</h3>
               <label class="setting-switch">
                 <input id="cfgBriefing60s" type="checkbox" />
                 <span>60s 早报</span>
@@ -394,42 +685,46 @@
                 <input id="cfgBriefingAi" type="checkbox" />
                 <span>AI 资讯</span>
               </label>
-              <label class="setting-switch">
+              <label class="setting-switch" data-visible-when="cfgBriefing60s,cfgBriefingAi">
                 <input id="cfgBriefingQzoneSync" type="checkbox" />
                 <span>早报空间</span>
               </label>
-              <label class="setting-field">
+              <h3 class="settings-group-title" data-visible-when="cfgBriefing60s,cfgBriefingAi">计划</h3>
+              <label class="setting-field" data-visible-when="cfgBriefing60s,cfgBriefingAi">
                 <span>早报时间</span>
                 <input id="cfgBriefingCron" type="text" placeholder="0 8 * * *" />
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgBriefing60s,cfgBriefingAi">
                 <span>随机延迟</span>
                 <input id="cfgBriefingDelay" type="number" min="0" max="60" step="1" />
               </label>
             </section>
 
+
             <section class="settings-section" data-settings-section="qzone" aria-label="空间设置">
               <h2 class="settings-section-title">空间</h2>
+              <h3 class="settings-group-title">开关</h3>
               <label class="setting-switch">
                 <input id="cfgQzoneEnabled" type="checkbox" />
                 <span>定时说说</span>
               </label>
-              <label class="setting-field">
+              <h3 class="settings-group-title" data-visible-when="cfgQzoneEnabled">计划</h3>
+              <label class="setting-field" data-visible-when="cfgQzoneEnabled">
                 <span>触发模式</span>
                 <select id="cfgQzoneTriggerMode">
                   <option value="cron">定时触发</option>
                   <option value="random_period">随机时段</option>
                 </select>
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgQzoneEnabled;cfgQzoneTriggerMode=cron">
                 <span>空间时间</span>
                 <input id="cfgQzoneCron" type="text" placeholder="0 20 * * *" />
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgQzoneEnabled;cfgQzoneTriggerMode=random_period">
                 <span>随机时段</span>
                 <textarea id="cfgQzoneRandomPeriods" rows="3" placeholder="08:00-10:00&#10;19:00-21:00"></textarea>
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgQzoneEnabled">
                 <span>说说类型</span>
                 <select id="cfgQzoneSharingType">
                   <option value="auto">自动</option>
@@ -440,21 +735,23 @@
                   <option value="recommendation">推荐</option>
                 </select>
               </label>
-              <label class="setting-switch">
+              <h3 class="settings-group-title" data-visible-when="cfgQzoneEnabled">配图</h3>
+              <label class="setting-switch" data-visible-when="cfgQzoneEnabled">
                 <input id="cfgQzoneImage" type="checkbox" />
                 <span>说说配图</span>
               </label>
-              <label class="setting-switch">
+              <label class="setting-switch" data-visible-when="cfgQzoneEnabled;cfgQzoneImage">
                 <input id="cfgQzoneHotImage" type="checkbox" />
                 <span>热搜长图</span>
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgQzoneEnabled;cfgQzoneImage">
                 <span>配图类型</span>
                 <textarea id="cfgQzoneImageTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="qzoneSequence" aria-label="空间序列">
+
+            <section class="settings-section" data-settings-section="qzoneSequence" aria-label="空间序列" data-visible-when="cfgQzoneEnabled;cfgQzoneSharingType=auto">
               <h2 class="settings-section-title">空间序列</h2>
               <label class="setting-field">
                 <span>凌晨</span>
@@ -490,203 +787,6 @@
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="content" aria-label="内容设置">
-              <h2 class="settings-section-title">内容</h2>
-              <label class="setting-switch">
-                <input id="cfgKnowledgePrefix" type="checkbox" />
-                <span>知识前缀</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgRecPrefix" type="checkbox" />
-                <span>推荐前缀</span>
-              </label>
-              <label class="setting-field setting-field-wide setting-field-tall">
-                <span>知识分类</span>
-                <textarea id="cfgKnowledgeCats" rows="8"></textarea>
-              </label>
-              <label class="setting-field setting-field-wide setting-field-tall">
-                <span>推荐分类</span>
-                <textarea id="cfgRecCats" rows="8"></textarea>
-              </label>
-            </section>
-
-            <section class="settings-section" data-settings-section="media" aria-label="媒体设置">
-              <h2 class="settings-section-title">媒体</h2>
-              <label class="setting-switch">
-                <input id="cfgAiImage" type="checkbox" />
-                <span>生成配图</span>
-              </label>
-              <label class="setting-field">
-                <span>生图 provider</span>
-                <select id="cfgImageProvider">
-                  <option value="generic_plugin">通用插件</option>
-                  <option value="calibrated_tool">校准工具</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>生图插件名</span>
-                <input id="cfgGenericImagePlugin" type="text" placeholder="astrbot_plugin_aiimg_enhanced" />
-              </label>
-              <label class="setting-field">
-                <span>生图方法</span>
-                <input id="cfgGenericImageMethod" type="text" placeholder="draw.generate" />
-              </label>
-              <label class="setting-field">
-                <span>提示词参数</span>
-                <input id="cfgGenericImagePromptArg" type="text" placeholder="prompt" />
-              </label>
-              <label class="setting-field">
-                <span>改图方法</span>
-                <input id="cfgGenericImageEditMethod" type="text" placeholder="edit.edit" />
-              </label>
-              <label class="setting-field">
-                <span>改图提示词参数</span>
-                <input id="cfgGenericImageEditPromptArg" type="text" placeholder="prompt" />
-              </label>
-              <label class="setting-field">
-                <span>结果字段</span>
-                <input id="cfgGenericImageResultField" type="text" placeholder="data.image_path" />
-              </label>
-              <label class="setting-field">
-                <span>参考图 key</span>
-                <input id="cfgGenericImageRefKeys" type="text" placeholder="bot_selfie,selfie,default" />
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>生图额外参数</span>
-                <textarea id="cfgGenericImageExtraArgs" rows="2" placeholder='{"size":"1024x1024"}'></textarea>
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>改图额外参数</span>
-                <textarea id="cfgGenericImageEditExtraArgs" rows="2" placeholder='{"backend":"default"}'></textarea>
-              </label>
-              <div class="provider-probe-panel setting-field-wide" aria-live="polite">
-                <div class="provider-probe-actions">
-                  <button id="probeImageProviderButton" class="button-secondary" type="button">校准生图</button>
-                  <button id="probeSelfieProviderButton" class="button-secondary" type="button">校准自拍</button>
-                  <button id="probeVideoProviderButton" class="button-secondary" type="button">校准视频</button>
-                  <button id="probeTtsProviderButton" class="button-secondary" type="button">校准语音</button>
-                </div>
-                <output id="providerProbeResult" class="provider-probe-result"></output>
-              </div>
-              <label class="setting-switch">
-                <input id="cfgHotImage" type="checkbox" />
-                <span>新闻长图</span>
-              </label>
-              <label class="setting-field">
-                <span>新闻图保留</span>
-                <input id="cfgNewsImageCleanupMax" type="number" min="0" max="1000" step="10" />
-              </label>
-              <label class="setting-switch">
-                <input id="cfgGiteeSelfieRef" type="checkbox" />
-                <span>形象参考图</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgPriorityText" type="checkbox" />
-                <span>文案主导</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgAiVideo" type="checkbox" />
-                <span>生成视频</span>
-              </label>
-              <label class="setting-field">
-                <span>视频 provider</span>
-                <select id="cfgVideoProvider">
-                  <option value="generic_plugin">通用插件</option>
-                  <option value="calibrated_tool">校准工具</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>视频插件名</span>
-                <input id="cfgGenericVideoPlugin" type="text" placeholder="留空复用生图插件" />
-              </label>
-              <label class="setting-field">
-                <span>视频方法</span>
-                <input id="cfgGenericVideoMethod" type="text" placeholder="video.generate" />
-              </label>
-              <label class="setting-field">
-                <span>视频结果字段</span>
-                <input id="cfgGenericVideoResultField" type="text" placeholder="data.video_url" />
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>视频额外参数</span>
-                <textarea id="cfgGenericVideoExtraArgs" rows="2" placeholder='{"model":"default"}'></textarea>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgSeparateMedia" type="checkbox" />
-                <span>图文分开</span>
-              </label>
-              <label class="setting-field">
-                <span>发送延迟</span>
-                <input id="cfgSeparateDelay" type="text" placeholder="1.0-2.0" />
-              </label>
-              <label class="setting-switch">
-                <input id="cfgRecordImageDesc" type="checkbox" />
-                <span>记录描述</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgAlwaysSelf" type="checkbox" />
-                <span>始终含人物</span>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgNeverSelf" type="checkbox" />
-                <span>从不含人物</span>
-              </label>
-              <label class="setting-field">
-                <span>配图类型</span>
-                <textarea id="cfgImageTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
-              </label>
-              <label class="setting-field">
-                <span>视频类型</span>
-                <textarea id="cfgVideoTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
-              </label>
-              <label class="setting-field setting-field-wide setting-field-tall">
-                <span>外貌提示词</span>
-                <textarea id="cfgAppearancePrompt" rows="5"></textarea>
-              </label>
-            </section>
-
-            <section class="settings-section" data-settings-section="tts" aria-label="语音设置">
-              <h2 class="settings-section-title">语音</h2>
-              <label class="setting-switch">
-                <input id="cfgTtsEnabled" type="checkbox" />
-                <span>语音转换</span>
-              </label>
-              <label class="setting-field">
-                <span>语音 provider</span>
-                <select id="cfgTtsProvider">
-                  <option value="generic_plugin">通用插件</option>
-                  <option value="calibrated_tool">校准工具</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>语音插件名</span>
-                <input id="cfgGenericTtsPlugin" type="text" placeholder="astrbot_plugin_tts_xxx" />
-              </label>
-              <label class="setting-field">
-                <span>语音方法</span>
-                <input id="cfgGenericTtsMethod" type="text" placeholder="tts.synthesize" />
-              </label>
-              <label class="setting-field">
-                <span>文本参数名</span>
-                <input id="cfgGenericTtsTextArg" type="text" placeholder="text" />
-              </label>
-              <label class="setting-field">
-                <span>语音结果字段</span>
-                <input id="cfgGenericTtsResultField" type="text" placeholder="data.audio_path" />
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>语音额外参数</span>
-                <textarea id="cfgGenericTtsExtraArgs" rows="2" placeholder='{"voice":"default"}'></textarea>
-              </label>
-              <label class="setting-switch">
-                <input id="cfgAudioOnly" type="checkbox" />
-                <span>仅发语音</span>
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>语音类型</span>
-                <textarea id="cfgTtsTypes" rows="3" placeholder="greeting&#10;mood"></textarea>
-              </label>
-            </section>
 
             <section class="settings-section" data-settings-section="weixin" aria-label="微信设置">
               <h2 class="settings-section-title">微信</h2>
@@ -694,11 +794,11 @@
                 <input id="cfgWeixinCompress" type="checkbox" />
                 <span>压缩图片</span>
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgWeixinCompress">
                 <span>最大分辨率</span>
                 <input id="cfgWeixinMaxSide" type="number" min="1600" max="8192" step="128" />
               </label>
-              <label class="setting-field">
+              <label class="setting-field" data-visible-when="cfgWeixinCompress">
                 <span>目标大小 KB</span>
                 <input id="cfgWeixinMaxSize" type="number" min="512" max="40960" step="512" />
               </label>
@@ -712,72 +812,6 @@
               </label>
             </section>
 
-            <section class="settings-section" data-settings-section="news" aria-label="新闻设置">
-              <h2 class="settings-section-title">新闻</h2>
-              <label class="setting-switch">
-                <input id="cfgNewsApiEnabled" type="checkbox" />
-                <span>新闻 API</span>
-              </label>
-              <label class="setting-field">
-                <span>柠柚接口密钥</span>
-                <input id="cfgNewsApiKey" type="text" autocomplete="off" />
-              </label>
-              <label class="setting-field">
-                <span>新闻模式</span>
-                <select id="cfgNewsMode">
-                  <option value="fixed">固定新闻源</option>
-                  <option value="random">全量随机</option>
-                  <option value="config">配置列表随机</option>
-                  <option value="time_based">按时段智能选择</option>
-                </select>
-              </label>
-              <label class="setting-field">
-                <span>固定新闻源</span>
-                <select id="cfgNewsFixedSource"></select>
-              </label>
-              <label class="setting-field">
-                <span>获取条数</span>
-                <input id="cfgNewsItemsCount" type="number" min="1" max="20" step="1" />
-              </label>
-              <label class="setting-field">
-                <span>分享条数</span>
-                <input id="cfgNewsShareCount" type="text" placeholder="1-2" />
-              </label>
-              <label class="setting-field">
-                <span>API 超时</span>
-                <input id="cfgNewsApiTimeout" type="number" min="1" max="60" step="1" />
-              </label>
-              <label class="setting-switch">
-                <input id="cfgNewsWebSearch" type="checkbox" />
-                <span>联网补充</span>
-              </label>
-              <label class="setting-field setting-field-wide">
-                <span>随机新闻源</span>
-                <textarea id="cfgNewsRandomSources" rows="5" placeholder="zhihu&#10;weibo&#10;bili"></textarea>
-              </label>
-            </section>
-
-            <section class="settings-section" data-settings-section="llm" aria-label="模型设置">
-              <h2 class="settings-section-title">模型</h2>
-              <label class="setting-field">
-                <span>模型服务商</span>
-                <input id="cfgLlmProviderId" type="text" autocomplete="off" placeholder="跟随默认" data-empty-label="跟随默认" />
-                <datalist id="cfgLlmProviderOptions"></datalist>
-              </label>
-              <label class="setting-field">
-                <span>生成超时</span>
-                <input id="cfgLlmTimeout" type="number" min="1" max="180" step="1" />
-              </label>
-              <label class="setting-switch">
-                <input id="cfgUsePersona" type="checkbox" />
-                <span>融合人设</span>
-              </label>
-              <label class="setting-field">
-                <span>人设 ID</span>
-                <input id="cfgPersonaId" type="text" autocomplete="off" placeholder="不指定人设" data-empty-label="不指定人设" />
-                <datalist id="cfgPersonaOptions"></datalist>
-              </label>
-            </section>
           </form>
         </section>
         </section>

@@ -864,6 +864,25 @@ h3 {
   border-bottom: 1px solid rgba(83, 141, 199, 0.16);
 }
 
+.settings-group-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: #2f83c8;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.settings-group-title::after {
+  min-width: 32px;
+  height: 1px;
+  flex: 1;
+  content: "";
+  background: linear-gradient(90deg, rgba(83, 141, 199, 0.22), transparent);
+}
+
 .setting-field,
 .setting-switch {
   grid-column: span 4;
@@ -876,6 +895,34 @@ h3 {
 
 .setting-field-tall {
   align-self: stretch;
+}
+
+.settings-section[data-settings-section="basic"] .setting-switch,
+.settings-section[data-settings-section="llm"] .setting-switch,
+.settings-section[data-settings-section="media"] .setting-switch,
+.settings-section[data-settings-section="tts"] .setting-switch,
+.settings-section[data-settings-section="news"] .setting-switch,
+.settings-section[data-settings-section="briefing"] .setting-switch,
+.settings-section[data-settings-section="qzone"] .setting-switch {
+  grid-column: span 3;
+}
+
+.settings-section[data-settings-section="content"] .setting-field {
+  grid-column: span 6;
+}
+
+.settings-section[data-settings-section="sequence"] .setting-field,
+.settings-section[data-settings-section="qzoneSequence"] .setting-field {
+  grid-column: span 3;
+}
+
+.settings-section[data-settings-section="target"] .setting-field-wide,
+.settings-section[data-settings-section="media"] .provider-probe-panel,
+.settings-section[data-settings-section="media"] .setting-field-wide,
+.settings-section[data-settings-section="tts"] .setting-field-wide,
+.settings-section[data-settings-section="news"] .setting-field-wide,
+.settings-section[data-settings-section="content"] .setting-field-wide {
+  grid-column: 1 / -1;
 }
 
 .setting-switch {

@@ -175,9 +175,62 @@ export function createSettingsConfig({
 
   function handleConfigChanged(event) {
     if (state.configApplying || isTargetEditorEvent(event)) return;
+    refreshConditionalSettings();
     state.configChangeSeq += 1;
     setConfigDirty(true);
     scheduleConfigAutoSave(event);
+  }
+
+  function conditionElement(id) {
+    return id ? document.getElementById(id) : null;
+  }
+
+  function conditionValue(element) {
+    if (!element) return "";
+    if (element instanceof HTMLInputElement && element.type === "checkbox") {
+      return element.checked ? "checked" : "unchecked";
+    }
+    return text(element.value).trim();
+  }
+
+  function conditionMatches(rule) {
+    const body = text(rule).trim();
+    if (!body) return true;
+    return body.split(",").some((group) => conditionGroupMatches(group));
+  }
+
+  function conditionGroupMatches(group) {
+    return text(group).split(";").every((part) => {
+      const expression = text(part).trim();
+      if (!expression) return true;
+      if (expression.startsWith("!")) {
+        const element = conditionElement(expression.slice(1));
+        return conditionValue(element) !== "checked";
+      }
+      const [rawId, rawExpected = "checked"] = expression.split("=");
+      const id = text(rawId).trim();
+      const expected = text(rawExpected).trim();
+      const element = conditionElement(id);
+      const value = conditionValue(element);
+      if (!expected) return Boolean(value);
+      return expected.split("|").map((item) => text(item).trim()).includes(value);
+    });
+  }
+
+  function refreshConditionalSettings() {
+    for (const node of el.settingsView?.querySelectorAll("[data-visible-when]") || []) {
+      const visible = conditionMatches(node.dataset.visibleWhen);
+      node.hidden = !visible;
+      node.classList.toggle("is-condition-hidden", !visible);
+      node.setAttribute("aria-hidden", visible ? "false" : "true");
+    }
+    const activeSection = el.settingsSections.find((section) => section.dataset.settingsSection === state.settingsTab);
+    if (state.activeView === "settings" && activeSection?.hidden) {
+      const nextSection = el.settingsSections.find((section) => !section.hidden);
+      if (nextSection?.dataset.settingsSection) {
+        setSettingsTab(nextSection.dataset.settingsSection, { scroll: false, sync: false });
+      }
+    }
   }
 
   function numberValue(input, fallback = 0) {
@@ -368,6 +421,7 @@ export function createSettingsConfig({
     state.configApplying = false;
     setConfigDirty(false);
     syncSweetSelects();
+    refreshConditionalSettings();
   }
 
   function collectConfigPayload() {
@@ -519,7 +573,12 @@ export function createSettingsConfig({
   }
 
   function setSettingsTab(tab, { scroll = true, sync = true } = {}) {
-    state.settingsTab = tab || "target";
+    let nextTab = tab || "basic";
+    const requestedSection = el.settingsSections.find((section) => section.dataset.settingsSection === nextTab);
+    if (requestedSection?.hidden) {
+      nextTab = el.settingsSections.find((section) => !section.hidden)?.dataset.settingsSection || "basic";
+    }
+    state.settingsTab = nextTab;
     for (const section of el.settingsSections) {
       section.classList.toggle("active", section.dataset.settingsSection === state.settingsTab);
     }
@@ -529,6 +588,7 @@ export function createSettingsConfig({
       button.setAttribute("aria-pressed", active ? "true" : "false");
     });
     if (sync) {
+      refreshConditionalSettings();
       closeSweetSelects();
       syncSweetSelects();
     }
