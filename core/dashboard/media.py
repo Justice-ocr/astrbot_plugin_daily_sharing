@@ -167,7 +167,7 @@ class DashboardMediaMixin:
     @staticmethod
     def _page_dynamic_sharing_type(value: str) -> str:
         raw = str(value or "all").strip().lower()
-        allowed = {"all", "auto", "briefing", *(item.value for item in SharingType)}
+        allowed = {"all", "auto", "briefing", "weather", *(item.value for item in SharingType)}
         return raw if raw in allowed else "all"
 
     async def _page_media_page(

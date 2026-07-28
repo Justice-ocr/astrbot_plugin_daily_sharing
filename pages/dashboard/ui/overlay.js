@@ -1,4 +1,4 @@
-import { fullContent, text } from "./format.js?v=20260609-format";
+import { fullContent, text } from "./format.js?v=20260728-weather";
 import { LIGHTBOX_ANIMATION_MS } from "./constants.js?v=20260609-media-flat";
 
 export function createOverlayController({ state, elements: el } = {}) {

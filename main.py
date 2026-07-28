@@ -10,6 +10,7 @@ from .core.config import (
 )
 from .core.news import NewsService
 from .core.image import ImageService
+from .core.weather import WeatherRenderer, WeatherService
 from .core.content import ContentService
 from .core.context import ContextService
 from .core.db import DatabaseManager 
@@ -38,6 +39,7 @@ class DailySharingPlugin(PluginRuntimeMixin, PluginLlmMixin, PluginSupportMixin,
         self.extra_shares_conf = self.config.get("extra_shares", {})
         self.context_conf = self.config.get("context_conf", {})
         self.news_conf = self.config.get("news_conf", {})
+        self.weather_conf = self.config.get("weather_conf", {})
         self.contact_aliases = self.config.get("contact_aliases", [])
         
         # 分享内容记录条数 
@@ -46,6 +48,7 @@ class DailySharingPlugin(PluginRuntimeMixin, PluginLlmMixin, PluginSupportMixin,
         # 锁与防抖
         self._lock = asyncio.Lock()
         self._target_locks = {}
+        self._weather_locks = {}
         self._last_share_time = None
         
         # 生命周期标志位 
@@ -82,6 +85,16 @@ class DailySharingPlugin(PluginRuntimeMixin, PluginLlmMixin, PluginSupportMixin,
         self.ctx_service = ContextService(context, config)
         self.news_service = NewsService(config)
         self.image_service = ImageService(context, config, self._call_llm_wrapper)
+        self.weather_service = WeatherService(
+            context,
+            self.weather_conf,
+            self._call_llm_wrapper,
+            self.image_service.provider_manager,
+        )
+        self.weather_renderer = WeatherRenderer(
+            self.data_dir / "Temp" / "weather",
+            self.weather_conf,
+        )
         
         # 初始化内容服务
         self.content_service = ContentService(

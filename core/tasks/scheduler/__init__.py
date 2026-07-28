@@ -1,7 +1,9 @@
 import asyncio
+import hashlib
 import random as random_module
 from datetime import datetime, timedelta
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from astrbot.api import logger
 
@@ -120,6 +122,7 @@ class TaskSchedulerMixin(
 
     def setup_tasks(self):
         self.setup_cleanup_tasks()
+        self.setup_weather_crons()
 
         if not self.plugin.config.get("enable_auto_sharing", False):
             logger.debug("[每日分享] 分享内容已禁用")
@@ -146,6 +149,51 @@ class TaskSchedulerMixin(
 
         # 启动时恢复因为重启而中断的延迟任务
         self.plugin._track_task(self._recover_pending_jobs())
+
+    def setup_weather_crons(self):
+        """Register per-user weather jobs independently of the main sharing switch."""
+        for job in list(self.scheduler.get_jobs()):
+            if str(job.id).startswith("weather_"):
+                self.scheduler.remove_job(job.id)
+
+        if not self.weather_conf.get("enabled", False):
+            return
+
+        rules = self.get_weather_rules()
+        if not rules:
+            logger.warning("[每日分享/天气] 已启用天气播报，但没有有效规则")
+            return
+        for rule in rules:
+            cron_kwargs = self._parse_cron_to_kwargs(rule.cron)
+            if not cron_kwargs:
+                logger.error(f"[每日分享/天气] 跳过无效 Cron：{rule.target} | {rule.cron}")
+                continue
+            digest = hashlib.sha1(
+                f"{rule.target}|{rule.location}|{rule.cron}|{rule.timezone}".encode("utf-8")
+            ).hexdigest()[:16]
+            job_id = f"weather_{digest}"
+
+            async def weather_job(rule=rule):
+                await self.execute_weather_rule(rule, source_type="scheduled")
+
+            try:
+                self.scheduler.add_job(
+                    weather_job,
+                    "cron",
+                    **cron_kwargs,
+                    timezone=ZoneInfo(rule.timezone),
+                    id=job_id,
+                    name=f"天气 · {rule.location}",
+                    replace_existing=True,
+                    max_instances=1,
+                    coalesce=True,
+                )
+                logger.debug(
+                    f"[每日分享/天气] 已注册 {rule.target} 的 {rule.location} 天气任务 "
+                    f"({rule.cron}, {rule.timezone})"
+                )
+            except Exception as exc:
+                logger.error(f"[每日分享/天气] 注册任务失败：{rule.target}: {exc}")
 
     def setup_custom_target_crons(self):
         """解析并为写了独立时间的群聊、私聊挂载独立定时 (支持随机延迟)"""

@@ -1,6 +1,7 @@
 import re
 
 from ..config import NEWS_SOURCE_MAP
+from ..weather import parse_weather_rules
 from .common import (
     _PAGE_BASIC_SEQUENCE_DEFAULTS,
     _PAGE_CONTEXT_STRATEGY_OPTIONS,
@@ -105,6 +106,38 @@ class DashboardConfigApplyMixin:
             extra["briefing_cron_random_delay"] = self._page_int_value(
                 briefing_body.get("briefing_cron_random_delay"), 0, min_value=0, max_value=60
             )
+
+        weather_body = self._page_payload_section(sections, "weather")
+        weather = self.config.setdefault("weather_conf", {})
+        self._page_apply_bool_fields(weather, weather_body, ("enabled",))
+        if "rules" in weather_body:
+            rules_text = self._page_clean_text(weather_body.get("rules"), max_len=20000)
+            parse_weather_rules(rules_text, strict=True)
+            weather["rules"] = rules_text
+        if "provider" in weather_body:
+            weather["provider"] = self._page_choice_value(
+                weather_body.get("provider"),
+                {"auto", "astrbot", "anysearch", "grok"},
+                "auto",
+                "天气搜索来源",
+            )
+        if "provider_order" in weather_body:
+            weather["provider_order"] = self._page_list_value(
+                weather_body.get("provider_order"), max_items=20, item_max_len=100
+            )
+        for key in ("astrbot_tool_name", "template_path", "font_path"):
+            if key in weather_body:
+                weather[key] = self._page_clean_text(weather_body.get(key), max_len=1000)
+        for key, default, minimum, maximum in (
+            ("search_timeout_seconds", 60, 5, 300),
+            ("normalize_timeout_seconds", 90, 10, 300),
+            ("cache_minutes", 30, 1, 180),
+            ("cleanup_max_count", 60, 0, 500),
+        ):
+            if key in weather_body:
+                weather[key] = self._page_int_value(
+                    weather_body.get(key), default, min_value=minimum, max_value=maximum
+                )
 
         qzone_body = self._page_payload_section(sections, "qzone")
         qzone = self.config.setdefault("qzone_conf", {})

@@ -1,5 +1,5 @@
 import { IMAGE_CACHE_LIMIT } from "./constants.js?v=20260609-media-flat";
-import { text } from "./format.js?v=20260609-format";
+import { text } from "./format.js?v=20260728-weather";
 
 export function createMediaImageController({
   state,

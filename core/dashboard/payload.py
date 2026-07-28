@@ -22,6 +22,7 @@ class DashboardConfigPayloadMixin:
         receiver = self.config.setdefault("receiver", {})
         context_conf = self.config.setdefault("context_conf", {})
         llm = self.config.setdefault("llm_conf", {})
+        weather = self.config.setdefault("weather_conf", {})
         return {
             "enabled": bool(self.config.get("enable_auto_sharing", False)),
             "sections": {
@@ -51,6 +52,19 @@ class DashboardConfigPayloadMixin:
                     "sync_briefing_to_qzone": bool(extra.get("sync_briefing_to_qzone", False)),
                     "cron_briefing": extra.get("cron_briefing", "0 8 * * *"),
                     "briefing_cron_random_delay": int(extra.get("briefing_cron_random_delay", 0) or 0),
+                },
+                "weather": {
+                    "enabled": bool(weather.get("enabled", False)),
+                    "rules": str(weather.get("rules", "") or ""),
+                    "provider": str(weather.get("provider", "auto") or "auto"),
+                    "provider_order": list(weather.get("provider_order") or ["grok", "astrbot", "anysearch"]),
+                    "astrbot_tool_name": str(weather.get("astrbot_tool_name", "web_search_tavily") or "web_search_tavily"),
+                    "search_timeout_seconds": int(weather.get("search_timeout_seconds", 60) or 60),
+                    "normalize_timeout_seconds": int(weather.get("normalize_timeout_seconds", 90) or 90),
+                    "cache_minutes": int(weather.get("cache_minutes", 30) or 30),
+                    "template_path": str(weather.get("template_path", "") or ""),
+                    "font_path": str(weather.get("font_path", "") or ""),
+                    "cleanup_max_count": int(weather.get("cleanup_max_count", 60) or 0),
                 },
                 "qzone": {
                     "enable_qzone": bool(qzone.get("enable_qzone", False)),

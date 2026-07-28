@@ -1,4 +1,4 @@
-import { text } from "./format.js?v=20260609-format";
+import { text } from "./format.js?v=20260728-weather";
 
 const CONFIG_AUTO_SAVE_FAST_DELAY_MS = 360;
 const CONFIG_AUTO_SAVE_TEXT_DELAY_MS = 900;
@@ -281,6 +281,7 @@ export function createSettingsConfig({
     const sequence = configSection("sequence");
     const context = configSection("context");
     const briefing = configSection("briefing");
+    const weather = configSection("weather");
     const qzone = configSection("qzone");
     const qzoneSequence = configSection("qzone_sequence");
     const content = configSection("content");
@@ -331,6 +332,18 @@ export function createSettingsConfig({
     setInputChecked(el.cfgBriefingQzoneSync, briefing.sync_briefing_to_qzone);
     setInputValue(el.cfgBriefingCron, briefing.cron_briefing || "0 8 * * *");
     setInputValue(el.cfgBriefingDelay, briefing.briefing_cron_random_delay ?? 0);
+
+    setInputChecked(el.cfgWeatherEnabled, weather.enabled);
+    setInputValue(el.cfgWeatherRules, weather.rules || "");
+    setInputValue(el.cfgWeatherProvider, weather.provider || "auto");
+    setInputValue(el.cfgWeatherProviderOrder, arrayToLines(weather.provider_order));
+    setInputValue(el.cfgWeatherAstrbotTool, weather.astrbot_tool_name || "web_search_tavily");
+    setInputValue(el.cfgWeatherSearchTimeout, weather.search_timeout_seconds ?? 60);
+    setInputValue(el.cfgWeatherNormalizeTimeout, weather.normalize_timeout_seconds ?? 90);
+    setInputValue(el.cfgWeatherCacheMinutes, weather.cache_minutes ?? 30);
+    setInputValue(el.cfgWeatherTemplatePath, weather.template_path || "");
+    setInputValue(el.cfgWeatherFontPath, weather.font_path || "");
+    setInputValue(el.cfgWeatherCleanupMax, weather.cleanup_max_count ?? 60);
 
     setInputChecked(el.cfgQzoneEnabled, qzone.enable_qzone);
     setInputValue(el.cfgQzoneTriggerMode, qzone.qzone_trigger_mode || "cron");
@@ -477,6 +490,19 @@ export function createSettingsConfig({
           sync_briefing_to_qzone: Boolean(el.cfgBriefingQzoneSync?.checked),
           cron_briefing: text(el.cfgBriefingCron?.value).trim(),
           briefing_cron_random_delay: numberValue(el.cfgBriefingDelay, 0),
+        },
+        weather: {
+          enabled: Boolean(el.cfgWeatherEnabled?.checked),
+          rules: text(el.cfgWeatherRules?.value).trim(),
+          provider: el.cfgWeatherProvider?.value || "auto",
+          provider_order: linesToArray(el.cfgWeatherProviderOrder?.value),
+          astrbot_tool_name: text(el.cfgWeatherAstrbotTool?.value).trim() || "web_search_tavily",
+          search_timeout_seconds: numberValue(el.cfgWeatherSearchTimeout, 60),
+          normalize_timeout_seconds: numberValue(el.cfgWeatherNormalizeTimeout, 90),
+          cache_minutes: numberValue(el.cfgWeatherCacheMinutes, 30),
+          template_path: text(el.cfgWeatherTemplatePath?.value).trim(),
+          font_path: text(el.cfgWeatherFontPath?.value).trim(),
+          cleanup_max_count: numberValue(el.cfgWeatherCleanupMax, 60),
         },
         qzone: {
           enable_qzone: Boolean(el.cfgQzoneEnabled?.checked),

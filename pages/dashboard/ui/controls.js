@@ -1,4 +1,4 @@
-import { text } from "./format.js?v=20260609-format";
+import { text } from "./format.js?v=20260728-weather";
 
 const menuGap = 6;
 const viewportPadding = 12;

@@ -5,7 +5,7 @@ import {
   targetItemLabel,
   text,
   typeLabel,
-} from "./format.js?v=20260609-format";
+} from "./format.js?v=20260728-weather";
 
 const targetKindLabels = {
   group: "群聊",

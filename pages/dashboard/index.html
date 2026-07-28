@@ -87,6 +87,7 @@
                       <option value="broadcast_users">仅私聊</option>
                       <option value="qzone">QQ 空间</option>
                       <option value="briefing">早报</option>
+                      <option value="weather">天气</option>
                     </select>
                   </div>
                   <label id="runSpecificTargetField" class="run-specific-target" hidden>
@@ -156,6 +157,7 @@
                 <option value="greeting">问候</option>
                 <option value="news">新闻</option>
                 <option value="briefing">早报</option>
+                <option value="weather">天气</option>
                 <option value="mood">心情</option>
                 <option value="knowledge">知识</option>
                 <option value="recommendation">推荐</option>
@@ -197,6 +199,7 @@
             <button class="settings-map-item" type="button" data-settings-jump="tts">语音</button>
             <button class="settings-map-item" type="button" data-settings-jump="news">新闻</button>
             <button class="settings-map-item" type="button" data-settings-jump="briefing">早报</button>
+            <button class="settings-map-item" type="button" data-settings-jump="weather">天气</button>
             <button class="settings-map-item" type="button" data-settings-jump="qzone">空间</button>
             <button class="settings-map-item" type="button" data-settings-jump="qzoneSequence" data-visible-when="cfgQzoneEnabled;cfgQzoneSharingType=auto">空间序列</button>
             <button class="settings-map-item" type="button" data-settings-jump="weixin">平台</button>
@@ -701,6 +704,63 @@
             </section>
 
 
+            <section class="settings-section" data-settings-section="weather" aria-label="天气设置">
+              <h2 class="settings-section-title">天气</h2>
+              <h3 class="settings-group-title">运行</h3>
+              <label class="setting-switch">
+                <input id="cfgWeatherEnabled" type="checkbox" />
+                <span>每日天气播报</span>
+              </label>
+              <label class="setting-field setting-field-wide setting-field-tall">
+                <span>播报规则</span>
+                <textarea id="cfgWeatherRules" rows="6" placeholder="123456 | 香港沙田 | 0 7 * * * | Asia/Hong_Kong"></textarea>
+              </label>
+              <h3 class="settings-group-title">搜索</h3>
+              <label class="setting-field">
+                <span>搜索来源</span>
+                <select id="cfgWeatherProvider">
+                  <option value="auto">自动回退</option>
+                  <option value="astrbot">AstrBot 搜索</option>
+                  <option value="anysearch">AnySearch</option>
+                  <option value="grok">Grok 搜索</option>
+                </select>
+              </label>
+              <label class="setting-field" data-visible-when="cfgWeatherProvider=auto|astrbot">
+                <span>AstrBot 工具名</span>
+                <input id="cfgWeatherAstrbotTool" type="text" placeholder="web_search_tavily" />
+              </label>
+              <label class="setting-field setting-field-wide" data-visible-when="cfgWeatherProvider=auto">
+                <span>回退顺序</span>
+                <textarea id="cfgWeatherProviderOrder" rows="3" placeholder="grok&#10;astrbot&#10;anysearch"></textarea>
+              </label>
+              <label class="setting-field">
+                <span>搜索超时</span>
+                <input id="cfgWeatherSearchTimeout" type="number" min="5" max="300" step="5" />
+              </label>
+              <label class="setting-field">
+                <span>整理超时</span>
+                <input id="cfgWeatherNormalizeTimeout" type="number" min="10" max="300" step="5" />
+              </label>
+              <label class="setting-field">
+                <span>缓存分钟</span>
+                <input id="cfgWeatherCacheMinutes" type="number" min="1" max="180" step="1" />
+              </label>
+              <h3 class="settings-group-title">卡片</h3>
+              <label class="setting-field setting-field-wide">
+                <span>背景模板路径</span>
+                <input id="cfgWeatherTemplatePath" type="text" placeholder="留空使用内置背景" />
+              </label>
+              <label class="setting-field setting-field-wide">
+                <span>中文字体路径</span>
+                <input id="cfgWeatherFontPath" type="text" placeholder="留空自动查找系统字体" />
+              </label>
+              <label class="setting-field">
+                <span>保留张数</span>
+                <input id="cfgWeatherCleanupMax" type="number" min="0" max="500" step="10" />
+              </label>
+            </section>
+
+
             <section class="settings-section" data-settings-section="qzone" aria-label="空间设置">
               <h2 class="settings-section-title">空间</h2>
               <h3 class="settings-group-title">开关</h3>
@@ -853,6 +913,6 @@
       </section>
     </div>
 
-    <script type="module" src="./app.js?v=20260610-refactor"></script>
+    <script type="module" src="./app.js?v=20260728-weather"></script>
   </body>
 </html>

@@ -7,7 +7,7 @@ import {
   text,
   triggerSummary,
   typeLabel,
-} from "./format.js?v=20260609-format";
+} from "./format.js?v=20260728-weather";
 
 const RECENT_ACTION_DISPLAY_LIMIT = 1;
 const actionStatusLabels = {
@@ -26,6 +26,7 @@ const actionTargetLabels = {
   broadcast_users: "仅私聊",
   qzone: "QQ 空间",
   briefing: "早报",
+  weather: "天气",
   retry: "重试",
 };
 

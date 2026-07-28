@@ -1,17 +1,17 @@
 import { createDashboardApi, withTimeout } from "./api/api.js?v=20260609-api";
 import { createDashboardEffects } from "./ui/effects.js?v=20260609-effects";
 import { createCalendarUi } from "./ui/calendar.js?v=20260609-calendar";
-import { getDashboardElements } from "./ui/elements.js?v=20260611-provider-modes";
+import { getDashboardElements } from "./ui/elements.js?v=20260728-weather";
 import { createMediaUi } from "./ui/media.js?v=20260610-refactor";
-import { createStatusView } from "./ui/status.js?v=20260610-today-after-dynamic";
-import { createSettingsEnhancements } from "./ui/enhance.js?v=20260609-enhance";
-import { createSettingsConfig } from "./ui/config.js?v=20260611-provider-modes";
+import { createStatusView } from "./ui/status.js?v=20260728-weather";
+import { createSettingsEnhancements } from "./ui/enhance.js?v=20260728-weather";
+import { createSettingsConfig } from "./ui/config.js?v=20260728-weather";
 import { createSweetControls } from "./ui/controls.js?v=20260609-controls";
 import { createDashboardState } from "./ui/state.js?v=20260610-structure";
 import { createTargetsUi } from "./ui/targets.js?v=20260609-targets";
 import { createSakuraControls } from "./ui/sakura.js?v=20260610-structure";
 import { createViewController } from "./ui/view.js?v=20260610-structure";
-import { text } from "./ui/format.js?v=20260609-format";
+import { text } from "./ui/format.js?v=20260728-weather";
 
 const bridge = window.AstrBotPluginPage;
 const BRIDGE_READY_TIMEOUT_MS = 5000;
@@ -370,11 +370,12 @@ async function runShare(event) {
 function updateRunFormState() {
   const target = el.runTarget.value;
   const briefing = target === "briefing";
+  const fixedImageTask = briefing || target === "weather";
   const specificTarget = isSpecificRunTarget(target);
   const showSpecificTarget = target === "broadcast" || specificTarget;
   const specificTargetIsGroup = target !== "broadcast_users";
-  el.shareType.disabled = briefing;
-  el.newsSource.disabled = briefing || el.shareType.value !== "news";
+  el.shareType.disabled = fixedImageTask;
+  el.newsSource.disabled = fixedImageTask || el.shareType.value !== "news";
   if (el.runSpecificTargetField) {
     el.runSpecificTargetField.hidden = !showSpecificTarget;
   }

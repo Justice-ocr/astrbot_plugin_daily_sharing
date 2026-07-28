@@ -3,7 +3,7 @@
     "description": "启用自动分享",
     "type": "bool",
     "default": false,
-    "hint": "插件总开关，关闭后定时任务和所有功能将停止。",
+    "hint": "普通每日分享总开关；每日天气播报使用独立开关，关闭此项不会停止天气任务。",
     "obvious_hint": true
   },
   "receiver": {
@@ -163,6 +163,82 @@
         "type": "bool",
         "default": false,
         "hint": "开启后，定时触发的每天60s读世界和AI资讯快报也会自动作为说说分享到QQ空间。"
+      }
+    }
+  },
+  "weather_conf": {
+    "title": "每日天气播报",
+    "description": "独立定时获取天气并发送图片卡片",
+    "type": "object",
+    "hint": "不受自动分享总开关影响。通过 AstrBot 已注册的联网搜索工具获取数据，再由大语言模型整理并执行本地校验。",
+    "items": {
+      "enabled": {
+        "description": "启用每日天气播报",
+        "type": "bool",
+        "default": false,
+        "hint": "开启后按每条规则中的 Cron 和时区独立发送。"
+      },
+      "rules": {
+        "description": "天气播报规则",
+        "type": "text",
+        "default": "",
+        "hint": "每行一条：用户ID | 地点 | Cron | 时区。例如：123456 | 香港沙田 | 0 7 * * * | Asia/Hong_Kong。用户ID也可填写完整 UMO。"
+      },
+      "provider": {
+        "description": "天气搜索来源",
+        "type": "string",
+        "default": "auto",
+        "options": ["auto", "astrbot", "anysearch", "grok"],
+        "hint": "auto 按下方顺序回退；其他选项固定使用对应搜索工具。"
+      },
+      "provider_order": {
+        "description": "自动回退顺序",
+        "type": "list",
+        "items": {"type": "string"},
+        "default": ["grok", "astrbot", "anysearch"],
+        "hint": "可填写 grok、astrbot、anysearch 或已注册的具体工具名。无效、超时或数据校验失败时尝试下一项。"
+      },
+      "astrbot_tool_name": {
+        "description": "AstrBot 搜索工具名",
+        "type": "string",
+        "default": "web_search_tavily",
+        "hint": "可使用 web_search_tavily、web_search_brave、web_search_bocha、web_search_baidu、web_search_firecrawl、web_search_exa 等已启用工具。"
+      },
+      "search_timeout_seconds": {
+        "description": "单个搜索源超时（秒）",
+        "type": "int",
+        "default": 60,
+        "slider": {"min": 5, "max": 300, "step": 5}
+      },
+      "normalize_timeout_seconds": {
+        "description": "天气数据整理超时（秒）",
+        "type": "int",
+        "default": 90,
+        "slider": {"min": 10, "max": 300, "step": 5}
+      },
+      "cache_minutes": {
+        "description": "同城市天气缓存（分钟）",
+        "type": "int",
+        "default": 30,
+        "slider": {"min": 1, "max": 180, "step": 1}
+      },
+      "template_path": {
+        "description": "天气图片背景模板路径",
+        "type": "string",
+        "default": "",
+        "hint": "可选 1080x1440 PNG/JPG。留空使用插件内置的程序化背景。模板不要包含文字、数字、图标或水印。"
+      },
+      "font_path": {
+        "description": "中文字体路径",
+        "type": "string",
+        "default": "",
+        "hint": "可选 TTF/TTC 字体。留空自动查找系统中文字体。"
+      },
+      "cleanup_max_count": {
+        "description": "天气卡片最多保留张数",
+        "type": "int",
+        "default": 60,
+        "slider": {"min": 0, "max": 500, "step": 10}
       }
     }
   },

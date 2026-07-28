@@ -20,6 +20,7 @@ const typeLabels = {
   greeting: "问候",
   news: "新闻",
   briefing: "早报",
+  weather: "天气",
   mood: "心情",
   knowledge: "知识",
   recommendation: "推荐",

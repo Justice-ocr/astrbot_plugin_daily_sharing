@@ -1,4 +1,4 @@
-import { text } from "./format.js?v=20260609-format";
+import { text } from "./format.js?v=20260728-weather";
 
 const sliderGestureThresholdPx = 8;
 const sliderGestureAxisRatio = 1.25;
@@ -14,6 +14,7 @@ const settingsSectionSchema = {
     hint: "当全局默认分享类型为 auto 时，会按当前时段的序列循环选择分享类型。",
   },
   briefing: { section: "extra_shares" },
+  weather: { section: "weather_conf" },
   content: { section: "content_library" },
   context: { section: "context_conf" },
   news: { section: "news_conf" },
@@ -68,6 +69,17 @@ const settingsFieldSchema = {
   cfgBriefingQzoneSync: { section: "extra_shares", field: "sync_briefing_to_qzone" },
   cfgBriefingCron: { section: "extra_shares", field: "cron_briefing" },
   cfgBriefingDelay: { section: "extra_shares", field: "briefing_cron_random_delay" },
+  cfgWeatherEnabled: { section: "weather_conf", field: "enabled" },
+  cfgWeatherRules: { section: "weather_conf", field: "rules" },
+  cfgWeatherProvider: { section: "weather_conf", field: "provider" },
+  cfgWeatherProviderOrder: { section: "weather_conf", field: "provider_order" },
+  cfgWeatherAstrbotTool: { section: "weather_conf", field: "astrbot_tool_name" },
+  cfgWeatherSearchTimeout: { section: "weather_conf", field: "search_timeout_seconds" },
+  cfgWeatherNormalizeTimeout: { section: "weather_conf", field: "normalize_timeout_seconds" },
+  cfgWeatherCacheMinutes: { section: "weather_conf", field: "cache_minutes" },
+  cfgWeatherTemplatePath: { section: "weather_conf", field: "template_path" },
+  cfgWeatherFontPath: { section: "weather_conf", field: "font_path" },
+  cfgWeatherCleanupMax: { section: "weather_conf", field: "cleanup_max_count" },
   cfgQzoneEnabled: { section: "qzone_conf", field: "enable_qzone" },
   cfgQzoneTriggerMode: { section: "qzone_conf", field: "qzone_trigger_mode" },
   cfgQzoneCron: { section: "qzone_conf", field: "qzone_cron" },

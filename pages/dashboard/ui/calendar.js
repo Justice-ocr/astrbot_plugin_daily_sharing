@@ -3,7 +3,7 @@ import {
   formatDateOnly,
   replaceChildren,
   text,
-} from "./format.js?v=20260609-format";
+} from "./format.js?v=20260728-weather";
 
 const stackedQuery = "(max-width: 1100px)";
 const desktopColumns = 2;

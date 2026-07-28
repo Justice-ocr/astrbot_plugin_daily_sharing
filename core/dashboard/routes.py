@@ -263,8 +263,8 @@ class DashboardRoutesMixin:
         if not run:
             return
         try:
-            force_type = self._page_share_type(share_type)
-            source_key = self._page_news_source(news_source)
+            force_type = None if target == "weather" else self._page_share_type(share_type)
+            source_key = "" if target == "weather" else self._page_news_source(news_source)
             success_message = "分享成功"
             async with self._lock:
                 if target == "qzone":
@@ -279,6 +279,16 @@ class DashboardRoutesMixin:
                 elif target == "briefing":
                     await self.task_manager.execute_briefing_share(source_type="manual")
                     success_message = "早报分享成功"
+                elif target == "weather":
+                    rules = self.task_manager.get_weather_rules(strict=True)
+                    if not rules:
+                        raise RuntimeError("请先在天气设置中添加至少一条播报规则")
+                    ok = await self.task_manager.execute_weather_rule(
+                        rules[0], source_type="manual"
+                    )
+                    if not ok:
+                        raise RuntimeError("天气播报失败，请查看日志和失败记录")
+                    success_message = "首条天气规则测试成功"
                 else:
                     target_scope = {
                         "broadcast_groups": "groups",
@@ -309,15 +319,20 @@ class DashboardRoutesMixin:
         async def handler():
             body = await self._page_json_body()
             target = str(body.get("target") or "broadcast").strip()
-            if target not in {"broadcast", "broadcast_groups", "broadcast_users", "qzone", "briefing"}:
+            if target not in {"broadcast", "broadcast_groups", "broadcast_users", "qzone", "briefing", "weather"}:
                 raise RuntimeError(f"不支持的分享目标: {target}")
             if self._is_share_busy(global_scope=True):
                 raise RuntimeError("已有任务正在分享，请稍后再试")
 
-            share_type = str(body.get("share_type") or "auto").strip()
+            share_type = (
+                "weather"
+                if target == "weather"
+                else str(body.get("share_type") or "auto").strip()
+            )
             news_source = str(body.get("news_source") or "").strip()
-            self._page_share_type(share_type)
-            self._page_news_source(news_source)
+            if target != "weather":
+                self._page_share_type(share_type)
+                self._page_news_source(news_source)
             specific_target, specific_kind = self._page_specific_share_target(
                 target,
                 body.get("specific_target"),

@@ -14,6 +14,7 @@ class DashboardConfigRefreshMixin:
         self.extra_shares_conf = self.config.setdefault("extra_shares", {})
         self.context_conf = self.config.setdefault("context_conf", {})
         self.news_conf = self.config.setdefault("news_conf", {})
+        self.weather_conf = self.config.setdefault("weather_conf", {})
         self.contact_aliases = self.config.get("contact_aliases", [])
 
         self.ctx_service.config = self.config
@@ -34,6 +35,8 @@ class DashboardConfigRefreshMixin:
         self.image_service.llm_conf = self.llm_conf
         if hasattr(self.image_service, "provider_manager"):
             self.image_service.provider_manager.image_conf = self.image_conf
+        self.weather_service.update_config(self.weather_conf)
+        self.weather_renderer.update_config(self.weather_conf)
 
         self.content_service.config = self.config
         self.content_service.content_lib_conf = self.config.setdefault("content_library", {})
@@ -57,6 +60,9 @@ class DashboardConfigRefreshMixin:
         self.task_manager.tts_conf = self.tts_conf
         self.task_manager.context_conf = self.context_conf
         self.task_manager.receiver_conf = self.receiver_conf
+        self.task_manager.weather_conf = self.weather_conf
+        self.task_manager.weather_service = self.weather_service
+        self.task_manager.weather_renderer = self.weather_renderer
 
         self.command_handler.config = self.config
         self.command_handler.basic_conf = self.basic_conf
@@ -65,12 +71,9 @@ class DashboardConfigRefreshMixin:
 
     async def _rebuild_scheduler_after_config(self, *, clear_pending_when_disabled: bool = False) -> None:
         self.scheduler.remove_all_jobs()
-        if self.config.get("enable_auto_sharing", False):
-            self.task_manager.setup_tasks()
-        else:
-            if clear_pending_when_disabled:
-                await self.task_manager.clear_pending_delay_jobs()
-            self.task_manager.setup_cleanup_tasks()
+        if clear_pending_when_disabled and not self.config.get("enable_auto_sharing", False):
+            await self.task_manager.clear_pending_delay_jobs()
+        self.task_manager.setup_tasks()
         if self.scheduler.get_jobs() and not self.scheduler.running:
             self.scheduler.start()
 

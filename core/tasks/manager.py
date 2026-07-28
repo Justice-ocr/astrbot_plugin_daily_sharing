@@ -11,10 +11,12 @@ from .selector import TaskTypeSelectorMixin
 from .cache import TaskNewsCacheMixin
 from .scheduler import TaskSchedulerMixin
 from .targets import TaskTargetMixin
+from .weather import TaskWeatherMixin
 
 
 class TaskManager(
     TaskNewsCacheMixin,
+    TaskWeatherMixin,
     TaskTargetMixin,
     TaskSchedulerMixin,
     TaskProgressMixin,
@@ -38,6 +40,8 @@ class TaskManager(
         self.news_service = plugin.news_service
         self.image_service = plugin.image_service
         self.content_service = plugin.content_service
+        self.weather_service = getattr(plugin, "weather_service", None)
+        self.weather_renderer = getattr(plugin, "weather_renderer", None)
         self._lock = plugin._lock
         
         self.basic_conf = plugin.basic_conf
@@ -47,3 +51,4 @@ class TaskManager(
         self.tts_conf = plugin.tts_conf
         self.context_conf = plugin.context_conf
         self.receiver_conf = plugin.receiver_conf
+        self.weather_conf = getattr(plugin, "weather_conf", {})

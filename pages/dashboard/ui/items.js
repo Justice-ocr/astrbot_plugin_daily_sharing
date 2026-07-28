@@ -5,7 +5,7 @@ import {
   itemTargetLabel,
   text,
   typeLabel,
-} from "./format.js?v=20260609-format";
+} from "./format.js?v=20260728-weather";
 
 export function mediaKind(item) {
   const rawType = text(item.media_type).toLowerCase();

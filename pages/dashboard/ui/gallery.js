@@ -2,7 +2,7 @@ import {
   emptyNode,
   replaceChildren,
   text,
-} from "./format.js?v=20260609-format";
+} from "./format.js?v=20260728-weather";
 import {
   MEDIA_INITIAL_LIMIT,
   MEDIA_LOAD_STEP,
