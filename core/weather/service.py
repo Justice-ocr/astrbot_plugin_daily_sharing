@@ -15,6 +15,7 @@ from .models import validate_weather_data
 
 class WeatherService:
     SEARCH_ARG_NAMES = ("query", "q", "keyword", "keywords", "search_query")
+    SEARCH_NETWORK_RETRY_ATTEMPTS = 2
     DEFAULT_PROVIDER_TO_TOOL = {
         "tavily": "web_search_tavily",
         "bocha": "web_search_bocha",
@@ -51,12 +52,6 @@ class WeatherService:
         provider = str(provider_settings.get("websearch_provider", "") or "").lower()
         names = [self.DEFAULT_PROVIDER_TO_TOOL[provider]] if provider in self.DEFAULT_PROVIDER_TO_TOOL else []
 
-        manager_getter = getattr(self.context, "get_llm_tool_manager", None)
-        manager = manager_getter() if callable(manager_getter) else None
-        for tool in list(getattr(manager, "func_list", []) or []):
-            name = str(getattr(tool, "name", "") or "").strip()
-            if name.startswith("web_search_") and name not in names:
-                names.append(name)
         return names
 
     def _forecast_dates(self, timezone: str, now: datetime) -> str:
@@ -102,15 +97,30 @@ class WeatherService:
         if kwargs is None:
             raise RuntimeError(f"搜索工具 {tool_name} 缺少必需参数")
         timeout = max(5, min(int(self.config.get("search_timeout_seconds", 60) or 60), 300))
-        result, event = await asyncio.wait_for(
-            self.tool_adapter._execute_recorded_llm_tool(
-                tool,
-                kwargs,
-                target_umo,
-                query,
-            ),
-            timeout=timeout,
-        )
+        for attempt in range(1, self.SEARCH_NETWORK_RETRY_ATTEMPTS + 1):
+            try:
+                result, event = await asyncio.wait_for(
+                    self.tool_adapter._execute_recorded_llm_tool(
+                        tool,
+                        kwargs,
+                        target_umo,
+                        query,
+                    ),
+                    timeout=timeout,
+                )
+                break
+            except Exception as exc:
+                retryable = isinstance(exc, asyncio.TimeoutError) or any(
+                    marker in str(exc).lower()
+                    for marker in ("timeout", "timed out", "connection", "temporarily unavailable")
+                )
+                if not retryable or attempt >= self.SEARCH_NETWORK_RETRY_ATTEMPTS:
+                    raise
+                logger.warning(
+                    f"[每日分享/天气] AstrBot 搜索工具 {tool_name} 网络异常，"
+                    f"{attempt}/{self.SEARCH_NETWORK_RETRY_ATTEMPTS} 次尝试失败，正在重试：{exc}"
+                )
+                await asyncio.sleep(attempt)
         text = self._stringify_result(result)
         if not text:
             text = self._stringify_result(getattr(event, "sent_messages", None))
@@ -134,7 +144,10 @@ class WeatherService:
             except Exception as exc:
                 errors.append(f"{tool_name}: {exc}")
                 logger.warning(f"[每日分享/天气] AstrBot 搜索工具 {tool_name} 不可用：{exc}")
-        raise RuntimeError("AstrBot 网页搜索失败：" + "；".join(errors))
+        raise RuntimeError(
+            "AstrBot 网页搜索失败：" + "；".join(errors)
+            + "。请检查 AstrBot 当前默认网页搜索提供商的网络连接、API Key 和配额。"
+        )
 
     def _stringify_result(self, value: Any, _seen: set[int] | None = None) -> str:
         if value is None:

@@ -221,14 +221,45 @@ class _FakeTool:
         return self.result
 
 
+class _FlakyTool(_FakeTool):
+    def __init__(self, name, result):
+        super().__init__(name, result=result)
+        self.fail_once = True
+
+    async def run(self, **kwargs):
+        self.calls += 1
+        self.queries.append(kwargs.get("query", ""))
+        if self.fail_once:
+            self.fail_once = False
+            raise RuntimeError("Connection timeout")
+        return self.result
+
+
 class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
-    async def test_provider_fallback_and_cache(self):
-        first = _FakeTool("web_search_tavily", error=RuntimeError("offline"))
-        second = _FakeTool("web_search_brave", result="fresh weather with sources")
-        adapter = _FakeAdapter({first.name: first, second.name: second})
+    async def test_retries_transient_search_timeout(self):
+        tool = _FlakyTool("web_search_tavily", "weather search result")
+        adapter = _FakeAdapter({tool.name: tool})
         context = SimpleNamespace(
             get_config=lambda: {"provider_settings": {"websearch_provider": "tavily"}},
-            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[first, second]),
+            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[tool]),
+        )
+
+        async def llm(prompt, **kwargs):
+            return json.dumps(sample_weather(), ensure_ascii=False)
+
+        service = WeatherService(context, {}, llm, adapter)
+        result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
+
+        self.assertEqual("AstrBot · web_search_tavily", result["provider"])
+        self.assertEqual(3, tool.calls)
+
+    async def test_uses_only_configured_default_provider_and_cache(self):
+        tool = _FakeTool("web_search_tavily", result="fresh weather with sources")
+        other_tool = _FakeTool("web_search_brave", result="should not be called")
+        adapter = _FakeAdapter({tool.name: tool, other_tool.name: other_tool})
+        context = SimpleNamespace(
+            get_config=lambda: {"provider_settings": {"websearch_provider": "tavily"}},
+            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[tool, other_tool]),
         )
 
         async def llm(prompt, **kwargs):
@@ -242,10 +273,10 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         )
         result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
         cached = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
-        self.assertEqual(f"AstrBot · {second.name}", result["provider"])
+        self.assertEqual(f"AstrBot · {tool.name}", result["provider"])
         self.assertIs(result, cached)
-        self.assertEqual(2, first.calls)
-        self.assertEqual(2, second.calls)
+        self.assertEqual(2, tool.calls)
+        self.assertEqual(0, other_tool.calls)
 
     async def test_requeries_when_first_result_is_incomplete(self):
         tool = _FakeTool("web_search_tavily", result="weather search result")
