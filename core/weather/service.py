@@ -191,7 +191,7 @@ class WeatherService:
 只有搜索结果明确对应用户请求的地点“{location}”时，location 才填写该地点；否则输出 error。时区使用“{timezone}”；当前检索时间为 {local_now}。
 issued_at 填资料自身的更新时间；若资料没有具体更新时间，可省略该字段，系统会使用本次检索时间。
 daily 必须恰好是当地今天起连续四天。所有温度为摄氏度。
-只有地点、四个日期的天气现象/最高温/最低温或来源缺失时才输出 {{"error":"说明缺失项"}}，禁止猜测或补造这些基础天气数据。若没有可核实的当前实况，请省略 current 或使用空对象；系统会以今日预报生成并明确标记“今日预报”。体感温度、湿度和风力为可选展示字段，缺失时可省略。
+只有地点、四个日期的天气现象/最高温/最低温或来源缺失时才输出 {{"error":"说明缺失项"}}，禁止猜测或补造这些基础天气数据。若没有可核实的当前实况，请省略 current 或使用空对象；系统会以今日预报生成并明确标记“今日预报”。体感温度、紫外线指数、湿度、风力、日出时间、气压、AQI 和空气质量等级均为可选展示字段，缺失、格式不明或来源不可靠时直接省略，绝不能因此输出 error。
 sources 必须保留至少一个来源名称或 URL。
 
 JSON 结构：
@@ -199,7 +199,7 @@ JSON 结构：
   "location": "{location}",
   "timezone": "{timezone}",
   "issued_at": "ISO 8601（可省略）",
-  "current": {{"condition":"", "temperature_c":0, "feels_like_c":0, "humidity_pct":0, "wind":""}},
+  "current": {{"condition":"", "temperature_c":0, "feels_like_c":0, "uv_index":0, "humidity_pct":0, "wind":"", "sunrise":"HH:MM", "pressure_hpa":0, "aqi":0, "aqi_label":"优/良/..."}},
   "daily": [{{"date":"YYYY-MM-DD", "condition":"", "low_c":0, "high_c":0}}],
   "alerts": [],
   "sources": []

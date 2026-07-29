@@ -308,11 +308,11 @@ class WeatherRenderer:
                 f"{self._format_number(current['forecast_low_c'])}\u00b0\n\u6682\u65e0\u5b9e\u65f6\u89c2\u6d4b"
             )
         else:
-            details = (
-                f"\u4f53\u611f {self._format_number(current['feels_like_c'])}\u00b0C    "
-                f"\u6e7f\u5ea6 {self._format_number(current['humidity_pct'])}%\n"
-                f"{self._truncate_text(draw, str(current['wind']), self._font(22), 250)}"
-            )
+            detail_lines = []
+            if current.get("feels_like_c") is not None:
+                detail_lines.append(f"\u4f53\u611f {self._format_number(current['feels_like_c'])}\u00b0C")
+            detail_lines.append(self._truncate_text(draw, str(current.get("wind") or ""), self._font(22), 250))
+            details = "\n".join(item for item in detail_lines if item)
         draw.multiline_text((678, 414), details, font=self._font(22), fill=muted, spacing=8)
 
         daily = weather["daily"]
@@ -335,11 +335,14 @@ class WeatherRenderer:
             alert_font = self._fit_font(draw, alert_text, 560, 20, 16, bold=True)
             draw.text((350, 480), self._truncate_text(draw, alert_text, alert_font, 560), font=alert_font, fill=(134, 82, 25, 255))
         else:
+            metrics = self._metric_text(current)
             source = self._source_label(weather.get("sources", []))
-            footer = f"\u66f4\u65b0 {issued_at.strftime('%H:%M')}"
-            if source:
+            footer = metrics or f"\u66f4\u65b0 {issued_at.strftime('%H:%M')}"
+            if not metrics and source:
                 footer += f"  \u00b7  {source}"
-            draw.text((350, 482), footer, font=self._font(18), fill=(92, 112, 111, 230))
+            footer_font = self._fit_font(draw, footer, 600, 18, 13)
+            footer = self._truncate_text(draw, footer, footer_font, 600)
+            draw.text((350, 482), footer, font=footer_font, fill=(92, 112, 111, 230))
 
         digest = hashlib.sha1(f"{location}:{issued_at.isoformat()}".encode("utf-8")).hexdigest()[:10]
         safe_location = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff-]+", "_", location)[:32] or "weather"
@@ -347,6 +350,32 @@ class WeatherRenderer:
         image.save(output_path, format="PNG", optimize=True)
         self._cleanup()
         return str(output_path)
+
+    @classmethod
+    def _metric_text(cls, current: dict) -> str:
+        metrics = []
+        uv_index = current.get("uv_index")
+        if uv_index is not None:
+            metrics.append(f"\u7d2b\u5916\u7ebf {cls._format_number(uv_index)}")
+        humidity = current.get("humidity_pct")
+        if humidity is not None:
+            metrics.append(f"\u6e7f\u5ea6 {cls._format_number(humidity)}%")
+        wind = str(current.get("wind") or "").strip()
+        if wind:
+            metrics.append(wind)
+        sunrise = str(current.get("sunrise") or "").strip()
+        if sunrise:
+            metrics.append(f"\u65e5\u51fa {sunrise}")
+        pressure = current.get("pressure_hpa")
+        if pressure is not None:
+            metrics.append(f"\u6c14\u538b {cls._format_number(pressure)}hPa")
+        aqi_label = str(current.get("aqi_label") or "").strip()
+        aqi = current.get("aqi")
+        if aqi_label:
+            metrics.append(f"AQI {aqi_label}")
+        elif aqi is not None:
+            metrics.append(f"AQI {cls._format_number(aqi)}")
+        return "  \u00b7  ".join(metrics)
 
     @staticmethod
     def _format_number(value) -> str:

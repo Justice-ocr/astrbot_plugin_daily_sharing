@@ -124,7 +124,32 @@ class WeatherModelTests(unittest.TestCase):
         self.assertEqual(NOW.isoformat(), normalized["issued_at"])
         self.assertEqual(29, normalized["current"]["feels_like_c"])
         self.assertIsNone(normalized["current"]["humidity_pct"])
-        self.assertEqual("风力未提供", normalized["current"]["wind"])
+        self.assertEqual("", normalized["current"]["wind"])
+
+    def test_optional_indicators_never_block_weather_delivery(self):
+        value = sample_weather()
+        value["current"].update({
+            "uv_index": 6,
+            "sunrise": "5:31",
+            "pressure_hpa": 918,
+            "aqi": 36,
+            "aqi_label": "优",
+        })
+        normalized = validate_weather_data(
+            value, location="香港沙田", timezone="Asia/Hong_Kong", now=NOW,
+        )
+        self.assertEqual(6, normalized["current"]["uv_index"])
+        self.assertEqual("05:31", normalized["current"]["sunrise"])
+        self.assertEqual(918, normalized["current"]["pressure_hpa"])
+        self.assertEqual("优", normalized["current"]["aqi_label"])
+
+        value["current"].update({"uv_index": "未知", "pressure_hpa": 2000, "sunrise": "日出时刻"})
+        normalized = validate_weather_data(
+            value, location="香港沙田", timezone="Asia/Hong_Kong", now=NOW,
+        )
+        self.assertNotIn("uv_index", normalized["current"])
+        self.assertNotIn("pressure_hpa", normalized["current"])
+        self.assertNotIn("sunrise", normalized["current"])
 
     def test_derives_current_display_from_today_forecast(self):
         value = sample_weather()

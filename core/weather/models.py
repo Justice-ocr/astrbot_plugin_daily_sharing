@@ -117,6 +117,14 @@ def _number(value: Any, field: str, low: float, high: float) -> float:
     return number
 
 
+def _optional_number(value: Any, low: float, high: float) -> float | None:
+    """Ignore unavailable or unreliable display-only measurements."""
+    try:
+        return _number(value, "optional weather field", low, high)
+    except ValueError:
+        return None
+
+
 def _normalized_location(value: Any) -> str:
     text = re.sub(r"[\s,，.。·/\\_-]+", "", str(value or "").lower())
     return re.sub(r"(?:特别行政区|自治区|自治州|省|市|区|县)$", "", text)
@@ -210,7 +218,27 @@ def validate_weather_data(
     normalized_current["temperature_c"] = temperature_c
     normalized_current["feels_like_c"] = feels_like_c
     normalized_current["humidity_pct"] = humidity_pct
-    normalized_current["wind"] = str(current.get("wind") or "风力未提供").strip() or "风力未提供"
+    normalized_current["wind"] = str(current.get("wind") or "").strip()
+    for field, low, high in (
+        ("uv_index", 0, 20),
+        ("pressure_hpa", 850, 1100),
+        ("aqi", 0, 500),
+    ):
+        optional_value = _optional_number(current.get(field), low, high)
+        if optional_value is not None:
+            normalized_current[field] = optional_value
+        else:
+            normalized_current.pop(field, None)
+    sunrise = str(current.get("sunrise") or "").strip()
+    if re.fullmatch(r"(?:[01]?\d|2[0-3]):[0-5]\d", sunrise):
+        normalized_current["sunrise"] = sunrise.zfill(5)
+    else:
+        normalized_current.pop("sunrise", None)
+    aqi_label = str(current.get("aqi_label") or "").strip()
+    if aqi_label:
+        normalized_current["aqi_label"] = aqi_label[:16]
+    else:
+        normalized_current.pop("aqi_label", None)
     normalized_current["derived_from_daily"] = derived_from_daily
     if derived_from_daily:
         normalized_current["forecast_low_c"] = fallback_low
