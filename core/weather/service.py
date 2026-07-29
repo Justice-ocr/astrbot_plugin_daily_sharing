@@ -178,6 +178,82 @@ class WeatherService:
                     return text
         return str(value).strip()
 
+    @staticmethod
+    def _clip_evidence(value: str, limit: int) -> str:
+        """Keep both the result lead and tail when a search provider is verbose."""
+        text = str(value or "").strip()
+        if len(text) <= limit:
+            return text
+        try:
+            parsed = json.loads(text)
+            results = parsed.get("results") if isinstance(parsed, dict) else None
+        except (TypeError, ValueError):
+            results = None
+        if isinstance(results, list) and results:
+            results = results[:10]
+            item_limit = max(180, (limit // len(results)) - 40)
+            excerpts = []
+            for index, item in enumerate(results, 1):
+                item_text = json.dumps(item, ensure_ascii=False, default=str)
+                if len(item_text) > item_limit:
+                    item_head = int(item_limit * 0.78)
+                    item_text = (
+                        f"{item_text[:item_head]} [...\u8be5\u6765\u6e90\u5185\u5bb9\u5df2\u88c1\u526a...] "
+                        f"{item_text[-(item_limit - item_head):]}"
+                    )
+                excerpts.append(f"[\u5019\u9009\u6765\u6e90 {index}] {item_text}")
+            return "\n\n".join(excerpts)[:limit]
+        head = int(limit * 0.78)
+        tail = limit - head
+        return f"{text[:head]}\n\n[...\u641c\u7d22\u7ed3\u679c\u4e2d\u95f4\u5185\u5bb9\u5df2\u88c1\u526a...]\n\n{text[-tail:]}"
+
+    def _evidence_bundle(
+        self,
+        *,
+        current_raw: str,
+        forecast_raw: str,
+        supplement_raw: str = "",
+    ) -> str:
+        sections = [
+            "\u3010\u5b9e\u65f6\u5929\u6c14\u641c\u7d22\u3011\n" + self._clip_evidence(current_raw, 10000),
+            "\u3010\u9010\u65e5\u9884\u62a5\u641c\u7d22\u3011\n" + self._clip_evidence(forecast_raw, 16000),
+        ]
+        if supplement_raw:
+            sections.append("\u3010\u9488\u5bf9\u6027\u8865\u67e5\u3011\n" + self._clip_evidence(supplement_raw, 12000))
+        return "\n\n".join(sections)
+
+    def _evidence_selection_prompt(
+        self,
+        *,
+        raw: str,
+        location: str,
+        timezone: str,
+        now: datetime,
+    ) -> str:
+        dates = self._forecast_dates(timezone, now)
+        local_now = now.astimezone(ZoneInfo(timezone)).isoformat()
+        return f"""从下列杂乱网页搜索摘录中筛选互相兼容、可追溯的天气证据。只输出 JSON，不要 Markdown，不要解释。
+目标地点是“{location}”，时区是“{timezone}”，当前检索时间是 {local_now}；逐日预报目标日期必须是 {dates}。
+同一字段优先选择地点更匹配、目标日期更精确、发布时间更新、气象部门或可靠天气服务的资料。允许将不同来源的互补字段组合，但不得混入其他日期、其他城市或历史气候均值。资料没有明确发布时间时可使用，但不要臆造发布时间。
+当前实况找不到时，current 留空对象即可；这不是 error。逐日预报缺少的字段保留为空或省略，并在 missing 中说明。紫外线、湿度、风、日出、气压、AQI 都是可选项，绝不能因为它们缺失而标记核心数据缺失。
+sources 至少保留实际采用资料的名称或 URL；evidence 必须说明每条采用资料覆盖哪些字段。不要猜测数值。
+
+JSON 结构：
+{{
+  "location": "{location}",
+  "timezone": "{timezone}",
+  "issued_at": "ISO 8601，可省略",
+  "current": {{}},
+  "daily": [],
+  "alerts": [],
+  "sources": [],
+  "evidence": [{{"source":"", "url":"", "published_at":"", "fields":[]}}],
+  "missing": []
+}}
+
+搜索摘录：
+{raw}"""
+
     def _normalization_prompt(
         self,
         *,
@@ -187,11 +263,11 @@ class WeatherService:
         now: datetime,
     ) -> str:
         local_now = now.astimezone(ZoneInfo(timezone)).isoformat()
-        return f"""把下面的联网搜索结果整理为严格 JSON。只输出 JSON，不要 Markdown，不要解释。
-只有搜索结果明确对应用户请求的地点“{location}”时，location 才填写该地点；否则输出 error。时区使用“{timezone}”；当前检索时间为 {local_now}。
-issued_at 填资料自身的更新时间；若资料没有具体更新时间，可省略该字段，系统会使用本次检索时间。
+        return f"""把下面已经筛选过的天气证据整理为严格 JSON。只输出 JSON，不要 Markdown，不要解释。
+只能使用证据中已选择的字段，不得重新猜测、补造或改写数值。只有证据缺少地点、四个日期的天气现象/最高温/最低温或来源时才输出 {{"error":"说明缺失项"}}。时区使用“{timezone}”；当前检索时间为 {local_now}。
+issued_at 填已选资料自身的更新时间；若资料没有具体更新时间，可省略该字段，系统会使用本次检索时间。
 daily 必须恰好是当地今天起连续四天。所有温度为摄氏度。
-只有地点、四个日期的天气现象/最高温/最低温或来源缺失时才输出 {{"error":"说明缺失项"}}，禁止猜测或补造这些基础天气数据。若没有可核实的当前实况，请省略 current 或使用空对象；系统会以今日预报生成并明确标记“今日预报”。体感温度、紫外线指数、湿度、风力、日出时间、气压、AQI 和空气质量等级均为可选展示字段，缺失、格式不明或来源不可靠时直接省略，绝不能因此输出 error。
+若没有可核实的当前实况，请省略 current 或使用空对象；系统会以今日预报生成并明确标记“今日预报”。体感温度、紫外线指数、湿度、风力、日出时间、气压、AQI 和空气质量等级均为可选展示字段，缺失、格式不明或来源不可靠时直接省略，绝不能因此输出 error。
 sources 必须保留至少一个来源名称或 URL。
 
 JSON 结构：
@@ -205,7 +281,7 @@ JSON 结构：
   "sources": []
 }}
 
-搜索结果：
+已筛选证据：
 {raw[:24000]}"""
 
     @staticmethod
@@ -264,6 +340,56 @@ JSON 结构：
             now=now,
         )
 
+    async def _select_evidence(
+        self,
+        raw: str,
+        *,
+        location: str,
+        timezone: str,
+        target_umo: str,
+        now: datetime,
+    ) -> dict:
+        response = await self.call_llm(
+            self._evidence_selection_prompt(
+                raw=raw,
+                location=location,
+                timezone=timezone,
+                now=now,
+            ),
+            system_prompt="你是严谨的气象证据分析员，只能从搜索摘录中选择可核实字段。",
+            timeout=int(self.config.get("evidence_timeout_seconds", 90) or 90),
+            max_retries=1,
+            umo=target_umo or None,
+        )
+        selected = self.extract_json(response)
+        if not isinstance(selected, dict):
+            raise ValueError("模型未返回天气证据对象")
+        return selected
+
+    async def _resolve_weather(
+        self,
+        raw: str,
+        *,
+        location: str,
+        timezone: str,
+        target_umo: str,
+        now: datetime,
+    ) -> dict:
+        selected = await self._select_evidence(
+            raw,
+            location=location,
+            timezone=timezone,
+            target_umo=target_umo,
+            now=now,
+        )
+        return await self._normalize(
+            json.dumps(selected, ensure_ascii=False),
+            location=location,
+            timezone=timezone,
+            target_umo=target_umo,
+            now=now,
+        )
+
     @staticmethod
     def _result_excerpt(value: str, limit: int = 700) -> str:
         return re.sub(r"\s+", " ", str(value or "")).strip()[:limit]
@@ -293,9 +419,12 @@ JSON 结构：
             self._build_forecast_query(location, timezone, local_now),
             target_umo,
         )
-        raw = f"实时天气搜索结果：\n{current_raw}\n\n逐日预报搜索结果：\n{forecast_raw}"
+        raw = self._evidence_bundle(
+            current_raw=current_raw,
+            forecast_raw=forecast_raw,
+        )
         try:
-            data = await self._normalize(
+            data = await self._resolve_weather(
                 raw,
                 location=location,
                 timezone=timezone,
@@ -318,8 +447,12 @@ JSON 结构：
                 target_umo,
             )
             try:
-                data = await self._normalize(
-                    f"首次搜索结果：\n{raw}\n\n补充搜索结果：\n{supplement}",
+                data = await self._resolve_weather(
+                    self._evidence_bundle(
+                        current_raw=current_raw,
+                        forecast_raw=forecast_raw,
+                        supplement_raw=supplement,
+                    ),
                     location=location,
                     timezone=timezone,
                     target_umo=target_umo,

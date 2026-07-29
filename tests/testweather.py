@@ -282,6 +282,19 @@ class _FlakyTool(_FakeTool):
 
 
 class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
+    def test_evidence_clipping_keeps_each_json_result(self):
+        payload = json.dumps({
+            "results": [
+                {"title": "来源一", "snippet": "甲" * 2000},
+                {"title": "来源二", "snippet": "乙" * 2000},
+                {"title": "来源三", "snippet": "丙" * 2000},
+            ],
+        }, ensure_ascii=False)
+        clipped = WeatherService._clip_evidence(payload, 1800)
+        self.assertIn("来源一", clipped)
+        self.assertIn("来源二", clipped)
+        self.assertIn("来源三", clipped)
+
     async def test_retries_transient_search_timeout(self):
         tool = _FlakyTool("web_search_tavily", "weather search result")
         adapter = _FakeAdapter({tool.name: tool})
@@ -332,11 +345,18 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
             get_llm_tool_manager=lambda: SimpleNamespace(func_list=[tool]),
         )
         responses = iter([
-            json.dumps({"error": "缺少未来预报和体感温度"}, ensure_ascii=False),
+            json.dumps({
+                "location": "香港沙田", "current": {}, "daily": [], "sources": [],
+                "missing": ["缺少未来预报"],
+            }, ensure_ascii=False),
+            json.dumps({"error": "缺少未来预报"}, ensure_ascii=False),
+            json.dumps(sample_weather(), ensure_ascii=False),
             json.dumps(sample_weather(), ensure_ascii=False),
         ])
+        prompts = []
 
         async def llm(prompt, **kwargs):
+            prompts.append(prompt)
             return next(responses)
 
         service = WeatherService(context, {}, llm, adapter)
@@ -346,7 +366,10 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(3, tool.calls)
         self.assertIn("当前实时天气", tool.queries[0])
         self.assertIn("2026-07-28、2026-07-29、2026-07-30、2026-07-31", tool.queries[1])
-        self.assertIn("缺少未来预报和体感温度", tool.queries[2])
+        self.assertIn("缺少未来预报", tool.queries[2])
+        self.assertIn("筛选互相兼容、可追溯的天气证据", prompts[0])
+        self.assertIn("已筛选证据", prompts[1])
+        self.assertIn("针对性补查", prompts[2])
 
     async def test_accepts_core_forecast_without_optional_details(self):
         tool = _FakeTool("web_search_tavily", result="weather search result")
