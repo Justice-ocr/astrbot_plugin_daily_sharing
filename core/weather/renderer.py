@@ -163,11 +163,17 @@ class WeatherRenderer:
         condition = self._truncate_text(draw, condition, condition_font, 390)
         draw.text((590, 590), condition, font=condition_font, fill=accent)
         wind_font = self._font(30)
-        wind = self._truncate_text(draw, str(current["wind"]), wind_font, 390)
-        details = (
-            f"体感 {self._format_number(current['feels_like_c'])}°C    "
-            f"湿度 {self._format_number(current['humidity_pct'])}%\n{wind}"
-        )
+        if current.get("derived_from_daily"):
+            details = (
+                f"今日预报 {self._format_number(current['forecast_high_c'])}° / "
+                f"{self._format_number(current['forecast_low_c'])}°\n暂无实时观测"
+            )
+        else:
+            wind = self._truncate_text(draw, str(current["wind"]), wind_font, 390)
+            details = (
+                f"体感 {self._format_number(current['feels_like_c'])}°C    "
+                f"湿度 {self._format_number(current['humidity_pct'])}%\n{wind}"
+            )
         draw.multiline_text((590, 670), details, font=wind_font, fill=muted, spacing=16)
 
         alert_text = self._alert_text(weather.get("alerts", []))

@@ -4,6 +4,37 @@ const CONFIG_AUTO_SAVE_FAST_DELAY_MS = 360;
 const CONFIG_AUTO_SAVE_TEXT_DELAY_MS = 900;
 const CONFIG_AUTO_SAVE_RETRY_DELAY_MS = 600;
 const PROVIDER_PROBE_TIMEOUT_MS = 300000;
+const WEATHER_TIMEZONE_OPTIONS = [
+  {
+    label: "UTC-08:00（西八区）",
+    options: [{ value: "America/Los_Angeles", label: "美国西海岸" }],
+  },
+  {
+    label: "UTC-05:00（西五区）",
+    options: [{ value: "America/New_York", label: "美国东海岸" }],
+  },
+  {
+    label: "UTC+00:00（零时区）",
+    options: [{ value: "Europe/London", label: "伦敦" }],
+  },
+  {
+    label: "UTC+01:00（东一区）",
+    options: [{ value: "Europe/Paris", label: "巴黎" }],
+  },
+  {
+    label: "UTC+08:00（东八区）",
+    options: [
+      { value: "Asia/Shanghai", label: "中国大陆" },
+      { value: "Asia/Hong_Kong", label: "香港" },
+      { value: "Asia/Taipei", label: "台北" },
+      { value: "Asia/Singapore", label: "新加坡" },
+    ],
+  },
+  {
+    label: "UTC+09:00（东九区）",
+    options: [{ value: "Asia/Tokyo", label: "东京" }],
+  },
+];
 
 export function createSettingsConfig({
   state,
@@ -76,6 +107,27 @@ export function createSettingsConfig({
     if (advanced) advanced.hidden = mode !== "cron";
   }
 
+  function createWeatherTimezoneSelect(value) {
+    const timezone = document.createElement("select");
+    timezone.dataset.weatherField = "timezone";
+    const knownValues = new Set();
+    for (const groupDefinition of WEATHER_TIMEZONE_OPTIONS) {
+      const group = document.createElement("optgroup");
+      group.label = groupDefinition.label;
+      for (const optionDefinition of groupDefinition.options) {
+        knownValues.add(optionDefinition.value);
+        group.append(new Option(optionDefinition.label, optionDefinition.value));
+      }
+      timezone.append(group);
+    }
+    const selected = value || "Asia/Shanghai";
+    if (!knownValues.has(selected)) {
+      timezone.prepend(new Option(`已保存：${selected}`, selected));
+    }
+    timezone.value = selected;
+    return timezone;
+  }
+
   function createWeatherRuleRow(rule = {}) {
     const row = document.createElement("article");
     row.className = "weather-rule-item";
@@ -117,12 +169,7 @@ export function createSettingsConfig({
     time.value = rule.time || "08:00";
     time.dataset.weatherField = "time";
 
-    const timezone = document.createElement("input");
-    timezone.type = "text";
-    timezone.setAttribute("list", "weatherTimezoneOptions");
-    timezone.placeholder = "Asia/Shanghai";
-    timezone.value = rule.timezone || "Asia/Shanghai";
-    timezone.dataset.weatherField = "timezone";
+    const timezone = createWeatherTimezoneSelect(rule.timezone);
 
     const cron = document.createElement("input");
     cron.type = "text";

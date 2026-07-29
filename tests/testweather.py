@@ -126,6 +126,19 @@ class WeatherModelTests(unittest.TestCase):
         self.assertIsNone(normalized["current"]["humidity_pct"])
         self.assertEqual("风力未提供", normalized["current"]["wind"])
 
+    def test_derives_current_display_from_today_forecast(self):
+        value = sample_weather()
+        value["current"] = {}
+        normalized = validate_weather_data(
+            value,
+            location="香港沙田",
+            timezone="Asia/Hong_Kong",
+            now=NOW,
+        )
+        self.assertTrue(normalized["current"]["derived_from_daily"])
+        self.assertEqual("多云有阵雨", normalized["current"]["condition"])
+        self.assertEqual(29.5, normalized["current"]["temperature_c"])
+
     def test_extract_json_from_fenced_output(self):
         parsed = WeatherService.extract_json("说明\n```json\n{\"location\": \"香港\"}\n```")
         self.assertEqual("香港", parsed["location"])
@@ -311,8 +324,7 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         )
         value = sample_weather()
         value.pop("issued_at")
-        for key in ("feels_like_c", "humidity_pct", "wind"):
-            value["current"].pop(key)
+        value["current"] = {}
         for item in value["daily"]:
             item.pop("precipitation_probability_pct")
 
@@ -323,7 +335,8 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
 
         self.assertEqual(2, tool.calls)
-        self.assertEqual(29, result["current"]["feels_like_c"])
+        self.assertTrue(result["current"]["derived_from_daily"])
+        self.assertEqual(29.5, result["current"]["temperature_c"])
         self.assertNotIn("降水概率", "\n".join(tool.queries))
 
 

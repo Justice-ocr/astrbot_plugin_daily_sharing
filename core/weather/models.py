@@ -170,13 +170,31 @@ def validate_weather_data(
     if issued_at < local_now - timedelta(hours=36) or issued_at > local_now + timedelta(hours=2):
         raise ValueError("天气数据发布时间过旧或位于未来")
 
+    daily = value.get("daily")
+    if not isinstance(daily, list) or len(daily) != 4:
+        raise ValueError("daily 必须恰好包含今天及未来三天")
+
     current = value.get("current")
-    if not isinstance(current, dict):
-        raise ValueError("current 必须是对象")
+    current = current if isinstance(current, dict) else {}
     condition = str(current.get("condition") or "").strip()
+    raw_temperature = current.get("temperature_c")
+    has_current_temperature = not (
+        raw_temperature is None or str(raw_temperature).strip() == ""
+    )
+    derived_from_daily = not condition or not has_current_temperature
+    fallback_item = daily[0] if isinstance(daily[0], dict) else {}
+    if derived_from_daily:
+        fallback_low = _number(fallback_item.get("low_c"), "daily[0].low_c", -80, 60)
+        fallback_high = _number(fallback_item.get("high_c"), "daily[0].high_c", -80, 60)
+        condition = condition or str(fallback_item.get("condition") or "").strip()
+        if not has_current_temperature:
+            temperature_c = (fallback_low + fallback_high) / 2
+        else:
+            temperature_c = _number(raw_temperature, "current.temperature_c", -80, 60)
+    else:
+        temperature_c = _number(raw_temperature, "current.temperature_c", -80, 60)
     if not condition:
-        raise ValueError("当前天气状况不能为空")
-    temperature_c = _number(current.get("temperature_c"), "current.temperature_c", -80, 60)
+        raise ValueError("缺少当前天气现象，且无法从今日预报推导")
     feels_like_c = (
         temperature_c
         if current.get("feels_like_c") is None or str(current.get("feels_like_c")).strip() == ""
@@ -193,10 +211,11 @@ def validate_weather_data(
     normalized_current["feels_like_c"] = feels_like_c
     normalized_current["humidity_pct"] = humidity_pct
     normalized_current["wind"] = str(current.get("wind") or "风力未提供").strip() or "风力未提供"
+    normalized_current["derived_from_daily"] = derived_from_daily
+    if derived_from_daily:
+        normalized_current["forecast_low_c"] = fallback_low
+        normalized_current["forecast_high_c"] = fallback_high
 
-    daily = value.get("daily")
-    if not isinstance(daily, list) or len(daily) != 4:
-        raise ValueError("daily 必须恰好包含今天及未来三天")
     expected_date = local_now.date()
     normalized_daily = []
     for index, item in enumerate(daily):
