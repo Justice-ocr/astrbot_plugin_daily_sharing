@@ -13,14 +13,22 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 class WeatherRenderer:
     WIDTH = 1080
     HEIGHT = 1440
+    BUNDLED_CJK_FONT = (
+        Path(__file__).resolve().parents[2]
+        / "assets"
+        / "fonts"
+        / "NotoSansCJKsc-Regular.otf"
+    )
 
     def __init__(self, output_dir: Path, config: dict):
         self.output_dir = Path(output_dir)
         self.config = config
+        self._font_cache: dict[tuple[int, bool], object] = {}
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def update_config(self, config: dict) -> None:
         self.config = config
+        self._font_cache.clear()
 
     def _font_candidates(self, bold: bool) -> list[str]:
         configured = str(self.config.get("font_path", "") or "").strip()
@@ -31,19 +39,42 @@ class WeatherRenderer:
                 "C:/Windows/Fonts/simhei.ttf" if bold else "C:/Windows/Fonts/simsun.ttc",
             ])
         names.extend([
+            str(self.BUNDLED_CJK_FONT),
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc" if bold else "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Bold.otf" if bold else "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
+            "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Bold.ttc" if bold else "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJKsc-Bold.ttf" if bold else "/usr/share/fonts/truetype/noto/NotoSansCJKsc-Regular.ttf",
+            "/usr/share/fonts/truetype/arphic/ukai.ttc",
+            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
             "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         ])
         return [name for name in names if name]
 
+    @staticmethod
+    def _supports_cjk(font) -> bool:
+        try:
+            return bytes(font.getmask("汉")) != bytes(font.getmask("\ufffd"))
+        except Exception:
+            return False
+
     def _font(self, size: int, *, bold: bool = False):
+        cache_key = (size, bold)
+        cached = self._font_cache.get(cache_key)
+        if cached is not None:
+            return cached
         for path in self._font_candidates(bold):
             try:
-                return ImageFont.truetype(path, size=size)
+                font = ImageFont.truetype(path, size=size)
             except OSError:
                 continue
-        return ImageFont.load_default()
+            if self._supports_cjk(font):
+                self._font_cache[cache_key] = font
+                return font
+        raise RuntimeError(
+            "未找到可渲染中文的天气字体。请设置 weather_conf.font_path，"
+            "或确认插件 assets/fonts/NotoSansCJKsc-Regular.otf 文件完整。"
+        )
 
     def _fit_font(self, draw: ImageDraw.ImageDraw, text: str, max_width: int, size: int, min_size: int, *, bold=False):
         for candidate in range(size, min_size - 1, -2):

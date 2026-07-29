@@ -145,6 +145,14 @@ class WeatherModelTests(unittest.TestCase):
 
 
 class WeatherRendererTests(unittest.TestCase):
+    def test_bundled_font_supports_chinese(self):
+        with tempfile.TemporaryDirectory() as directory:
+            renderer = WeatherRenderer(Path(directory), {
+                "font_path": str(WeatherRenderer.BUNDLED_CJK_FONT),
+            })
+            self.assertTrue(WeatherRenderer.BUNDLED_CJK_FONT.is_file())
+            self.assertTrue(renderer._supports_cjk(renderer._font(32)))
+
     def test_render_default_card(self):
         with tempfile.TemporaryDirectory() as directory:
             renderer = WeatherRenderer(Path(directory), {})
