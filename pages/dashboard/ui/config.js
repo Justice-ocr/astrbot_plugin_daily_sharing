@@ -246,7 +246,7 @@ export function createSettingsConfig({
       if (state.configData?.sections?.weather) {
         state.configData.sections.weather.template_path = result.template_path || "";
       }
-      setWeatherTemplatePreview(dataUrl, `${file.name} · 已裁切为 1080 × 1440`);
+      setWeatherTemplatePreview(dataUrl, `${file.name} · 已裁切为 1280 × 720`);
       setNotice("天气背景已上传。", "success");
     } catch (error) {
       setNotice(error.message || "背景上传失败", "error");

@@ -163,7 +163,7 @@ class WeatherRendererTests(unittest.TestCase):
                 now=NOW,
             ))
             with Image.open(path) as image:
-                self.assertEqual((1080, 1440), image.size)
+                self.assertEqual((1280, 720), image.size)
                 self.assertGreater(ImageStat.Stat(image.convert("L")).var[0], 100)
 
 
@@ -209,7 +209,7 @@ class WeatherTemplateUploadTests(unittest.TestCase):
             self.assertEqual(str(template_path), routes.config["weather_conf"]["template_path"])
             self.assertIs(routes.config["weather_conf"], routes.weather_renderer.config)
             with Image.open(template_path) as image:
-                self.assertEqual((1080, 1440), image.size)
+                self.assertEqual((1280, 720), image.size)
 
 
 class _FakeAdapter:

@@ -282,7 +282,7 @@ class DashboardRoutesMixin:
                     source.load()
                     normalized = ImageOps.fit(
                         source.convert("RGB"),
-                        (1080, 1440),
+                        (1280, 720),
                         method=Image.Resampling.LANCZOS,
                         centering=(0.5, 0.5),
                     )
@@ -310,8 +310,8 @@ class DashboardRoutesMixin:
                 "ok": True,
                 "data": {
                     "template_path": str(output_path),
-                    "width": 1080,
-                    "height": 1440,
+                    "width": 1280,
+                    "height": 720,
                 },
                 "message": "天气背景已上传",
             }
