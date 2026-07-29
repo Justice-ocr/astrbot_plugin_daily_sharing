@@ -161,7 +161,12 @@ def validate_weather_data(
     if not _location_matches(location, actual_location):
         raise ValueError(f"天气地点不匹配：期望 {location}，得到 {actual_location or '空值'}")
 
-    issued_at = _parse_issued_at(value.get("issued_at"), tz)
+    raw_issued_at = value.get("issued_at")
+    issued_at = (
+        local_now
+        if raw_issued_at is None or not str(raw_issued_at).strip()
+        else _parse_issued_at(raw_issued_at, tz)
+    )
     if issued_at < local_now - timedelta(hours=36) or issued_at > local_now + timedelta(hours=2):
         raise ValueError("天气数据发布时间过旧或位于未来")
 
@@ -169,12 +174,25 @@ def validate_weather_data(
     if not isinstance(current, dict):
         raise ValueError("current 必须是对象")
     condition = str(current.get("condition") or "").strip()
-    wind = str(current.get("wind") or "").strip()
-    if not condition or not wind:
-        raise ValueError("当前天气状况和风力不能为空")
-    _number(current.get("temperature_c"), "current.temperature_c", -80, 60)
-    _number(current.get("feels_like_c"), "current.feels_like_c", -80, 70)
-    _number(current.get("humidity_pct"), "current.humidity_pct", 0, 100)
+    if not condition:
+        raise ValueError("当前天气状况不能为空")
+    temperature_c = _number(current.get("temperature_c"), "current.temperature_c", -80, 60)
+    feels_like_c = (
+        temperature_c
+        if current.get("feels_like_c") is None or str(current.get("feels_like_c")).strip() == ""
+        else _number(current.get("feels_like_c"), "current.feels_like_c", -80, 70)
+    )
+    humidity_pct = (
+        None
+        if current.get("humidity_pct") is None or str(current.get("humidity_pct")).strip() == ""
+        else _number(current.get("humidity_pct"), "current.humidity_pct", 0, 100)
+    )
+    normalized_current = dict(current)
+    normalized_current["condition"] = condition
+    normalized_current["temperature_c"] = temperature_c
+    normalized_current["feels_like_c"] = feels_like_c
+    normalized_current["humidity_pct"] = humidity_pct
+    normalized_current["wind"] = str(current.get("wind") or "风力未提供").strip() or "风力未提供"
 
     daily = value.get("daily")
     if not isinstance(daily, list) or len(daily) != 4:
@@ -197,13 +215,11 @@ def validate_weather_data(
         high_c = _number(item.get("high_c"), f"daily[{index}].high_c", -80, 60)
         if high_c < low_c:
             raise ValueError(f"daily[{index}] 最高温不能低于最低温")
-        _number(
-            item.get("precipitation_probability_pct"),
-            f"daily[{index}].precipitation_probability_pct",
-            0,
-            100,
-        )
-        normalized_daily.append(dict(item))
+        normalized_item = dict(item)
+        normalized_item["condition"] = daily_condition
+        normalized_item["low_c"] = low_c
+        normalized_item["high_c"] = high_c
+        normalized_daily.append(normalized_item)
 
     sources = value.get("sources")
     if not isinstance(sources, list) or not any(str(item).strip() for item in sources):
@@ -216,7 +232,7 @@ def validate_weather_data(
     normalized["location"] = actual_location
     normalized["timezone"] = timezone
     normalized["issued_at"] = issued_at.isoformat()
-    normalized["current"] = dict(current)
+    normalized["current"] = normalized_current
     normalized["daily"] = normalized_daily
     normalized["alerts"] = alerts
     normalized["sources"] = sources

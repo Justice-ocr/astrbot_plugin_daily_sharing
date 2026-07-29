@@ -106,6 +106,26 @@ class WeatherModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "合理范围"):
             validate_weather_data(value, location="香港沙田", timezone="Asia/Hong_Kong", now=NOW)
 
+    def test_validate_allows_missing_display_details(self):
+        value = sample_weather()
+        value.pop("issued_at")
+        value["current"].pop("feels_like_c")
+        value["current"].pop("humidity_pct")
+        value["current"].pop("wind")
+        for item in value["daily"]:
+            item.pop("precipitation_probability_pct")
+
+        normalized = validate_weather_data(
+            value,
+            location="香港沙田",
+            timezone="Asia/Hong_Kong",
+            now=NOW,
+        )
+        self.assertEqual(NOW.isoformat(), normalized["issued_at"])
+        self.assertEqual(29, normalized["current"]["feels_like_c"])
+        self.assertIsNone(normalized["current"]["humidity_pct"])
+        self.assertEqual("风力未提供", normalized["current"]["wind"])
+
     def test_extract_json_from_fenced_output(self):
         parsed = WeatherService.extract_json("说明\n```json\n{\"location\": \"香港\"}\n```")
         self.assertEqual("香港", parsed["location"])
@@ -249,6 +269,30 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(2, tool.calls)
         self.assertIn("2026-07-28、2026-07-29、2026-07-30、2026-07-31", tool.queries[0])
         self.assertIn("缺少未来预报和体感温度", tool.queries[1])
+
+    async def test_accepts_core_forecast_without_optional_details(self):
+        tool = _FakeTool("web_search_tavily", result="weather search result")
+        adapter = _FakeAdapter({tool.name: tool})
+        context = SimpleNamespace(
+            get_config=lambda: {"provider_settings": {"websearch_provider": "tavily"}},
+            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[tool]),
+        )
+        value = sample_weather()
+        value.pop("issued_at")
+        for key in ("feels_like_c", "humidity_pct", "wind"):
+            value["current"].pop(key)
+        for item in value["daily"]:
+            item.pop("precipitation_probability_pct")
+
+        async def llm(prompt, **kwargs):
+            return json.dumps(value, ensure_ascii=False)
+
+        service = WeatherService(context, {}, llm, adapter)
+        result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
+
+        self.assertEqual(1, tool.calls)
+        self.assertEqual(29, result["current"]["feels_like_c"])
+        self.assertNotIn("降水概率", tool.queries[0])
 
 
 class WeatherSchedulerTests(unittest.TestCase):

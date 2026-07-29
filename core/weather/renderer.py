@@ -196,9 +196,6 @@ class WeatherRenderer:
             temp_font = self._fit_font(draw, temps, card_w - 36, 34, 25, bold=True)
             temp_box = draw.textbbox((0, 0), temps, font=temp_font)
             draw.text((x + (card_w - (temp_box[2] - temp_box[0])) / 2, top + 285), temps, font=temp_font, fill=ink)
-            rain = f"降水 {self._format_number(item['precipitation_probability_pct'])}%"
-            rain_box = draw.textbbox((0, 0), rain, font=self._font(23))
-            draw.text((x + (card_w - (rain_box[2] - rain_box[0])) / 2, top + 340), rain, font=self._font(23), fill=muted)
 
         provider = str(weather.get("provider") or "")
         source = self._source_label(weather.get("sources", []))
@@ -220,6 +217,8 @@ class WeatherRenderer:
 
     @staticmethod
     def _format_number(value) -> str:
+        if value is None or str(value).strip() == "":
+            return "--"
         number = float(value)
         return str(int(number)) if number.is_integer() else f"{number:.1f}"
 

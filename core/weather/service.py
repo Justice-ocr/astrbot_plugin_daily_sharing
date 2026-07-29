@@ -75,8 +75,7 @@ class WeatherService:
         )
         return (
             f"查询 {location} 的实时天气，以及 {date_list} 这四个明确日期（今天和未来三天）的"
-            "逐日预报。每个日期都需要天气现象、最高温、最低温和降水概率；实时天气需要气温、"
-            "体感温度、湿度、风向风力。"
+            "逐日预报。每个日期都需要天气现象、最高温和最低温；实时天气需要天气现象和气温。"
             f"{requested}"
             "不要只给出笼统的“未来三天”摘要；优先使用当地气象部门或可靠天气服务的最新资料，并保留来源链接。"
         )
@@ -167,18 +166,18 @@ class WeatherService:
         local_now = now.astimezone(ZoneInfo(timezone)).isoformat()
         return f"""把下面的联网搜索结果整理为严格 JSON。只输出 JSON，不要 Markdown，不要解释。
 只有搜索结果明确对应用户请求的地点“{location}”时，location 才填写该地点；否则输出 error。时区使用“{timezone}”；当前检索时间为 {local_now}。
-issued_at 填资料自身的更新时间；若资料仅说明为实时结果但没有具体更新时间，可填当前检索时间。
-daily 必须恰好是当地今天起连续四天。所有温度为摄氏度，概率为 0 到 100 的数字。
-缺少任何必填信息时输出 {{"error":"说明缺失项"}}，禁止猜测或补造天气数据。
+issued_at 填资料自身的更新时间；若资料没有具体更新时间，可省略该字段，系统会使用本次检索时间。
+daily 必须恰好是当地今天起连续四天。所有温度为摄氏度。
+只有地点、当前天气现象、当前气温、四个日期的天气现象/最高温/最低温或来源缺失时才输出 {{"error":"说明缺失项"}}，禁止猜测或补造这些基础天气数据。体感温度、湿度和风力为可选展示字段，缺失时可省略。
 sources 必须保留至少一个来源名称或 URL。
 
 JSON 结构：
 {{
   "location": "{location}",
   "timezone": "{timezone}",
-  "issued_at": "ISO 8601",
+  "issued_at": "ISO 8601（可省略）",
   "current": {{"condition":"", "temperature_c":0, "feels_like_c":0, "humidity_pct":0, "wind":""}},
-  "daily": [{{"date":"YYYY-MM-DD", "condition":"", "low_c":0, "high_c":0, "precipitation_probability_pct":0}}],
+  "daily": [{{"date":"YYYY-MM-DD", "condition":"", "low_c":0, "high_c":0}}],
   "alerts": [],
   "sources": []
 }}
