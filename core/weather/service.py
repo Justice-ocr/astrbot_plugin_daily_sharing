@@ -59,25 +59,35 @@ class WeatherService:
                 names.append(name)
         return names
 
-    def _build_query(
+    def _forecast_dates(self, timezone: str, now: datetime) -> str:
+        local_date = now.astimezone(ZoneInfo(timezone)).date()
+        dates = [local_date + timedelta(days=offset) for offset in range(4)]
+        return "、".join(item.isoformat() for item in dates)
+
+    def _build_current_query(self, location: str) -> str:
+        return (
+            f"查询 {location} 当前实时天气。只需要返回当前天气现象和当前气温，"
+            "优先使用当地气象部门或可靠天气服务的最新资料，并保留来源链接。"
+        )
+
+    def _build_forecast_query(self, location: str, timezone: str, now: datetime) -> str:
+        return (
+            f"查询 {location} 在 {self._forecast_dates(timezone, now)} 这四个明确日期（今天和未来三天）的"
+            "逐日天气预报。每个日期都需要天气现象、最高温和最低温。"
+            "不要只给出笼统的“未来三天”摘要；优先使用当地气象部门或可靠天气服务的最新资料，并保留来源链接。"
+        )
+
+    def _build_repair_query(
         self,
         location: str,
         timezone: str,
         now: datetime,
-        *,
-        missing: str = "",
+        missing: str,
     ) -> str:
-        local_date = now.astimezone(ZoneInfo(timezone)).date()
-        dates = [local_date + timedelta(days=offset) for offset in range(4)]
-        date_list = "、".join(item.isoformat() for item in dates)
-        requested = (
-            f"请补充缺少的信息：{missing}。" if missing else ""
-        )
         return (
-            f"查询 {location} 的实时天气，以及 {date_list} 这四个明确日期（今天和未来三天）的"
-            "逐日预报。每个日期都需要天气现象、最高温和最低温；实时天气需要天气现象和气温。"
-            f"{requested}"
-            "不要只给出笼统的“未来三天”摘要；优先使用当地气象部门或可靠天气服务的最新资料，并保留来源链接。"
+            f"补充查询 {location} 当前实时天气，以及 {self._forecast_dates(timezone, now)} 的逐日天气预报。"
+            f"当前缺少：{missing[:500]}。"
+            "只提供可核实的数据：当前天气现象和气温，以及每个日期的天气现象、最高温、最低温，并保留来源链接。"
         )
 
     async def _invoke_search_tool(self, tool_name: str, query: str, target_umo: str) -> str:
@@ -241,6 +251,10 @@ JSON 结构：
             now=now,
         )
 
+    @staticmethod
+    def _result_excerpt(value: str, limit: int = 700) -> str:
+        return re.sub(r"\s+", " ", str(value or "")).strip()[:limit]
+
     async def get_weather(
         self,
         location: str,
@@ -258,8 +272,15 @@ JSON 结构：
             if cached and time.monotonic() - cached[0] < ttl:
                 return cached[1]
 
-        query = self._build_query(location, timezone, local_now)
-        raw, tool_name = await self._search_with_astrbot_default(query, target_umo)
+        current_raw, current_tool = await self._search_with_astrbot_default(
+            self._build_current_query(location),
+            target_umo,
+        )
+        forecast_raw, forecast_tool = await self._search_with_astrbot_default(
+            self._build_forecast_query(location, timezone, local_now),
+            target_umo,
+        )
+        raw = f"实时天气搜索结果：\n{current_raw}\n\n逐日预报搜索结果：\n{forecast_raw}"
         try:
             data = await self._normalize(
                 raw,
@@ -268,29 +289,38 @@ JSON 结构：
                 target_umo=target_umo,
                 now=local_now,
             )
-            provider_tools = [tool_name]
+            provider_tools = [current_tool, forecast_tool]
         except (ValueError, KeyError) as first_error:
             logger.info(
                 f"[每日分享/天气] {location} 首次搜索信息不完整，使用 AstrBot 默认搜索补查：{first_error}"
             )
-            supplement_query = self._build_query(
+            supplement_query = self._build_repair_query(
                 location,
                 timezone,
                 local_now,
-                missing=str(first_error)[:500],
+                str(first_error),
             )
             supplement, supplement_tool = await self._search_with_astrbot_default(
                 supplement_query,
                 target_umo,
             )
-            data = await self._normalize(
-                f"首次搜索结果：\n{raw}\n\n补充搜索结果：\n{supplement}",
-                location=location,
-                timezone=timezone,
-                target_umo=target_umo,
-                now=local_now,
-            )
-            provider_tools = [tool_name, supplement_tool]
+            try:
+                data = await self._normalize(
+                    f"首次搜索结果：\n{raw}\n\n补充搜索结果：\n{supplement}",
+                    location=location,
+                    timezone=timezone,
+                    target_umo=target_umo,
+                    now=local_now,
+                )
+                provider_tools = [current_tool, forecast_tool, supplement_tool]
+            except Exception as final_error:
+                logger.warning(
+                    f"[每日分享/天气] {location} 补查后仍缺少核心天气数据：{final_error}；"
+                    f"实时摘要={self._result_excerpt(current_raw)!r}；"
+                    f"预报摘要={self._result_excerpt(forecast_raw)!r}；"
+                    f"补查摘要={self._result_excerpt(supplement)!r}"
+                )
+                raise
         data["provider"] = "AstrBot · " + " / ".join(dict.fromkeys(provider_tools))
         async with self._cache_lock:
             self._cache[key] = (time.monotonic(), data)

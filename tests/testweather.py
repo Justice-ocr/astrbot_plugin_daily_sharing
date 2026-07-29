@@ -244,8 +244,8 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         cached = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
         self.assertEqual(f"AstrBot · {second.name}", result["provider"])
         self.assertIs(result, cached)
-        self.assertEqual(1, first.calls)
-        self.assertEqual(1, second.calls)
+        self.assertEqual(2, first.calls)
+        self.assertEqual(2, second.calls)
 
     async def test_requeries_when_first_result_is_incomplete(self):
         tool = _FakeTool("web_search_tavily", result="weather search result")
@@ -266,9 +266,10 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
 
         self.assertEqual("AstrBot · web_search_tavily", result["provider"])
-        self.assertEqual(2, tool.calls)
-        self.assertIn("2026-07-28、2026-07-29、2026-07-30、2026-07-31", tool.queries[0])
-        self.assertIn("缺少未来预报和体感温度", tool.queries[1])
+        self.assertEqual(3, tool.calls)
+        self.assertIn("当前实时天气", tool.queries[0])
+        self.assertIn("2026-07-28、2026-07-29、2026-07-30、2026-07-31", tool.queries[1])
+        self.assertIn("缺少未来预报和体感温度", tool.queries[2])
 
     async def test_accepts_core_forecast_without_optional_details(self):
         tool = _FakeTool("web_search_tavily", result="weather search result")
@@ -290,9 +291,9 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         service = WeatherService(context, {}, llm, adapter)
         result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
 
-        self.assertEqual(1, tool.calls)
+        self.assertEqual(2, tool.calls)
         self.assertEqual(29, result["current"]["feels_like_c"])
-        self.assertNotIn("降水概率", tool.queries[0])
+        self.assertNotIn("降水概率", "\n".join(tool.queries))
 
 
 class WeatherSchedulerTests(unittest.TestCase):
