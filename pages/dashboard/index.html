@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>仪表盘</title>
-    <link rel="stylesheet" href="./style.css?v=20260610-image-coral" />
+    <link rel="stylesheet" href="./style.css?v=20260729-weather-settings" />
   </head>
   <body>
     <div id="pageBootLoader" class="page-boot-loader" role="status" aria-label="页面载入中...">
@@ -711,30 +711,28 @@
                 <input id="cfgWeatherEnabled" type="checkbox" />
                 <span>每日天气播报</span>
               </label>
-              <label class="setting-field setting-field-wide setting-field-tall">
-                <span>播报规则</span>
-                <textarea id="cfgWeatherRules" rows="6" placeholder="123456 | 香港沙田 | 0 7 * * * | Asia/Hong_Kong"></textarea>
-              </label>
+              <div class="weather-rule-editor" id="weatherRuleEditor">
+                <div class="settings-target-head">
+                  <h3>用户与计划</h3>
+                  <button id="weatherAddRuleButton" class="text-button" type="button">添加用户</button>
+                </div>
+                <div id="weatherRuleList" class="weather-rule-list"></div>
+              </div>
+              <textarea id="cfgWeatherRules" hidden aria-hidden="true"></textarea>
+              <datalist id="weatherTimezoneOptions">
+                <option value="Asia/Shanghai"></option>
+                <option value="Asia/Hong_Kong"></option>
+                <option value="Asia/Taipei"></option>
+                <option value="Asia/Tokyo"></option>
+                <option value="Asia/Singapore"></option>
+                <option value="America/Los_Angeles"></option>
+                <option value="America/New_York"></option>
+                <option value="Europe/London"></option>
+                <option value="Europe/Paris"></option>
+              </datalist>
               <h3 class="settings-group-title">搜索</h3>
               <label class="setting-field">
-                <span>搜索来源</span>
-                <select id="cfgWeatherProvider">
-                  <option value="auto">自动回退</option>
-                  <option value="astrbot">AstrBot 搜索</option>
-                  <option value="anysearch">AnySearch</option>
-                  <option value="grok">Grok 搜索</option>
-                </select>
-              </label>
-              <label class="setting-field" data-visible-when="cfgWeatherProvider=auto|astrbot">
-                <span>AstrBot 工具名</span>
-                <input id="cfgWeatherAstrbotTool" type="text" placeholder="web_search_tavily" />
-              </label>
-              <label class="setting-field setting-field-wide" data-visible-when="cfgWeatherProvider=auto">
-                <span>回退顺序</span>
-                <textarea id="cfgWeatherProviderOrder" rows="3" placeholder="grok&#10;astrbot&#10;anysearch"></textarea>
-              </label>
-              <label class="setting-field">
-                <span>搜索超时</span>
+                <span>AstrBot 搜索超时</span>
                 <input id="cfgWeatherSearchTimeout" type="number" min="5" max="300" step="5" />
               </label>
               <label class="setting-field">
@@ -746,10 +744,16 @@
                 <input id="cfgWeatherCacheMinutes" type="number" min="1" max="180" step="1" />
               </label>
               <h3 class="settings-group-title">卡片</h3>
-              <label class="setting-field setting-field-wide">
-                <span>背景模板路径</span>
-                <input id="cfgWeatherTemplatePath" type="text" placeholder="留空使用内置背景" />
-              </label>
+              <div class="weather-template-upload setting-field-wide">
+                <span>背景模板</span>
+                <div class="weather-template-actions">
+                  <button id="weatherTemplateUploadButton" class="text-button" type="button">上传背景</button>
+                  <span id="weatherTemplateMeta" class="weather-template-meta">未上传，使用内置背景</span>
+                </div>
+                <input id="cfgWeatherTemplateFile" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+                <img id="weatherTemplatePreview" class="weather-template-preview" alt="天气背景预览" hidden />
+                <input id="cfgWeatherTemplatePath" type="hidden" />
+              </div>
               <label class="setting-field setting-field-wide">
                 <span>中文字体路径</span>
                 <input id="cfgWeatherFontPath" type="text" placeholder="留空自动查找系统字体" />
@@ -913,6 +917,6 @@
       </section>
     </div>
 
-    <script type="module" src="./app.js?v=20260728-weather"></script>
+    <script type="module" src="./app.js?v=20260729-weather-settings"></script>
   </body>
 </html>

@@ -15,9 +15,14 @@ from .models import validate_weather_data
 
 class WeatherService:
     SEARCH_ARG_NAMES = ("query", "q", "keyword", "keywords", "search_query")
-    TOOL_ALIASES = {
-        "grok": "grok_web_search",
-        "anysearch": "anysearch_search",
+    DEFAULT_PROVIDER_TO_TOOL = {
+        "tavily": "web_search_tavily",
+        "bocha": "web_search_bocha",
+        "brave": "web_search_brave",
+        "firecrawl": "web_search_firecrawl",
+        "baidu": "web_search_baidu",
+        "baidu_ai_search": "web_search_baidu",
+        "exa": "web_search_exa",
     }
 
     def __init__(self, context, config: dict, llm_func, tool_adapter):
@@ -32,29 +37,27 @@ class WeatherService:
         self.config = config
         self._cache.clear()
 
-    def _provider_names(self) -> list[str]:
-        provider = str(self.config.get("provider", "auto") or "auto").strip().lower()
-        if provider != "auto":
-            raw = [provider]
-        else:
-            raw = self.config.get(
-                "provider_order",
-                ["grok", "astrbot", "anysearch"],
-            )
-            if isinstance(raw, str):
-                raw = [item.strip() for item in re.split(r"[,，\n]+", raw) if item.strip()]
-        result = []
-        for item in raw or []:
-            name = str(item or "").strip()
-            if not name:
-                continue
-            if name.lower() == "astrbot":
-                name = str(self.config.get("astrbot_tool_name", "web_search_tavily") or "").strip()
-            else:
-                name = self.TOOL_ALIASES.get(name.lower(), name)
-            if name and name not in result:
-                result.append(name)
-        return result
+    def _default_search_tool_names(self) -> list[str]:
+        """Use AstrBot's active web-search provider, without plugin-specific settings."""
+        provider_settings = {}
+        try:
+            get_config = getattr(self.context, "get_config", None)
+            runtime_config = get_config() if callable(get_config) else None
+            if hasattr(runtime_config, "get"):
+                provider_settings = runtime_config.get("provider_settings", {}) or {}
+        except Exception as exc:
+            logger.debug(f"[每日分享/天气] 读取 AstrBot 搜索配置失败：{exc}")
+
+        provider = str(provider_settings.get("websearch_provider", "") or "").lower()
+        names = [self.DEFAULT_PROVIDER_TO_TOOL[provider]] if provider in self.DEFAULT_PROVIDER_TO_TOOL else []
+
+        manager_getter = getattr(self.context, "get_llm_tool_manager", None)
+        manager = manager_getter() if callable(manager_getter) else None
+        for tool in list(getattr(manager, "func_list", []) or []):
+            name = str(getattr(tool, "name", "") or "").strip()
+            if name.startswith("web_search_") and name not in names:
+                names.append(name)
+        return names
 
     def _build_query(self, location: str, timezone: str, now: datetime) -> str:
         today = now.astimezone(ZoneInfo(timezone)).date().isoformat()
@@ -96,6 +99,19 @@ class WeatherService:
         if re.match(r"^\s*(?:错误|失败|error|failed)\s*[：:]", text, flags=re.I):
             raise RuntimeError(f"搜索工具 {tool_name} 返回错误：{text[:300]}")
         return text
+
+    async def _search_with_astrbot_default(self, query: str, target_umo: str) -> tuple[str, str]:
+        tool_names = self._default_search_tool_names()
+        if not tool_names:
+            raise RuntimeError("AstrBot 未启用网页搜索工具")
+        errors = []
+        for tool_name in tool_names:
+            try:
+                return await self._invoke_search_tool(tool_name, query, target_umo), tool_name
+            except Exception as exc:
+                errors.append(f"{tool_name}: {exc}")
+                logger.warning(f"[每日分享/天气] AstrBot 搜索工具 {tool_name} 不可用：{exc}")
+        raise RuntimeError("AstrBot 网页搜索失败：" + "；".join(errors))
 
     def _stringify_result(self, value: Any, _seen: set[int] | None = None) -> str:
         if value is None:
@@ -229,25 +245,16 @@ JSON 结构：
             if cached and time.monotonic() - cached[0] < ttl:
                 return cached[1]
 
-        errors = []
         query = self._build_query(location, timezone, local_now)
-        for tool_name in self._provider_names():
-            try:
-                raw = await self._invoke_search_tool(tool_name, query, target_umo)
-                data = await self._normalize(
-                    raw,
-                    location=location,
-                    timezone=timezone,
-                    target_umo=target_umo,
-                    now=local_now,
-                )
-                data["provider"] = tool_name
-                async with self._cache_lock:
-                    self._cache[key] = (time.monotonic(), data)
-                return data
-            except Exception as exc:
-                errors.append(f"{tool_name}: {exc}")
-                logger.warning(f"[每日分享/天气] 搜索源 {tool_name} 不可用或数据无效：{exc}")
-        if not self._provider_names():
-            errors.append("未配置搜索工具")
-        raise RuntimeError("所有天气搜索源均失败：" + "；".join(errors))
+        raw, tool_name = await self._search_with_astrbot_default(query, target_umo)
+        data = await self._normalize(
+            raw,
+            location=location,
+            timezone=timezone,
+            target_umo=target_umo,
+            now=local_now,
+        )
+        data["provider"] = f"AstrBot · {tool_name}"
+        async with self._cache_lock:
+            self._cache[key] = (time.monotonic(), data)
+        return data

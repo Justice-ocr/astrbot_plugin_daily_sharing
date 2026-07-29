@@ -25,6 +25,7 @@ class DashboardBaseMixin:
             ("page/media", self.page_media, ["GET"], "每日分享媒体"),
             ("page/media/view", self.page_media_view, ["POST"], "查看每日分享媒体"),
             ("page/provider/probe", self.page_provider_probe, ["POST"], "每日分享 provider 探测"),
+            ("page/weather/template", self.page_weather_template_upload, ["POST"], "上传天气背景模板"),
             ("page/toggle", self.page_toggle, ["POST"], "切换每日分享开关"),
             ("page/run", self.page_run, ["POST"], "手动分享"),
             ("page/retry", self.page_retry, ["POST"], "重试每日分享"),

@@ -1,5 +1,7 @@
 import asyncio
+import base64
 from datetime import datetime
+from io import BytesIO
 import json
 import math
 from pathlib import Path
@@ -124,6 +126,51 @@ class WeatherRendererTests(unittest.TestCase):
                 self.assertGreater(ImageStat.Stat(image.convert("L")).var[0], 100)
 
 
+class WeatherTemplateUploadTests(unittest.TestCase):
+    def test_upload_normalizes_template_and_updates_config(self):
+        from core.dashboard.routes import DashboardRoutesMixin
+
+        class Renderer:
+            def __init__(self):
+                self.config = None
+
+            def update_config(self, config):
+                self.config = config
+
+        class FakeRoutes(DashboardRoutesMixin):
+            def __init__(self, directory, body):
+                self.data_dir = Path(directory)
+                self.config = {}
+                self.weather_conf = {}
+                self.weather_renderer = Renderer()
+                self.body = body
+                self.saved = False
+
+            async def _page_json_body(self):
+                return self.body
+
+            async def _page_json(self, callback, headers=None):
+                return await callback()
+
+            async def _save_config_file(self):
+                self.saved = True
+
+        source = Image.new("RGB", (1200, 800), (98, 172, 204))
+        buffer = BytesIO()
+        source.save(buffer, format="PNG")
+        data_url = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+        with tempfile.TemporaryDirectory() as directory:
+            routes = FakeRoutes(directory, {"data_url": data_url})
+            response = asyncio.run(routes.page_weather_template_upload())
+            template_path = Path(response["data"]["template_path"])
+            self.assertTrue(template_path.is_file())
+            self.assertTrue(routes.saved)
+            self.assertEqual(str(template_path), routes.config["weather_conf"]["template_path"])
+            self.assertIs(routes.config["weather_conf"], routes.weather_renderer.config)
+            with Image.open(template_path) as image:
+                self.assertEqual((1080, 1440), image.size)
+
+
 class _FakeAdapter:
     def __init__(self, tools):
         self.tools = tools
@@ -154,22 +201,26 @@ class _FakeTool:
 
 class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_provider_fallback_and_cache(self):
-        first = _FakeTool("grok_web_search", error=RuntimeError("offline"))
-        second = _FakeTool("web_search_tavily", result="fresh weather with sources")
+        first = _FakeTool("web_search_tavily", error=RuntimeError("offline"))
+        second = _FakeTool("web_search_brave", result="fresh weather with sources")
         adapter = _FakeAdapter({first.name: first, second.name: second})
+        context = SimpleNamespace(
+            get_config=lambda: {"provider_settings": {"websearch_provider": "tavily"}},
+            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[first, second]),
+        )
 
         async def llm(prompt, **kwargs):
             return json.dumps(sample_weather(), ensure_ascii=False)
 
         service = WeatherService(
-            None,
-            {"provider_order": ["grok", "astrbot"], "astrbot_tool_name": second.name},
+            context,
+            {},
             llm,
             adapter,
         )
         result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
         cached = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
-        self.assertEqual(second.name, result["provider"])
+        self.assertEqual(f"AstrBot · {second.name}", result["provider"])
         self.assertIs(result, cached)
         self.assertEqual(1, first.calls)
         self.assertEqual(1, second.calls)

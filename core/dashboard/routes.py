@@ -1,6 +1,12 @@
+import base64
 from datetime import datetime
+from hashlib import sha1
+from io import BytesIO
+from pathlib import Path
+import re
 
 from astrbot.api import logger
+from PIL import Image, ImageOps
 
 from ..config import NEWS_SOURCE_MAP
 from .common import _PAGE_RECENT_SHARE_LIMIT
@@ -247,6 +253,67 @@ class DashboardRoutesMixin:
                 "ok": True,
                 "data": status["data"],
                 "message": "自动分享已启用" if enable else "自动分享已停用",
+            }
+
+        return await self._page_json(handler)
+
+    async def page_weather_template_upload(self):
+        async def handler():
+            body = await self._page_json_body()
+            data_url = str(body.get("data_url") or "").strip()
+            matched = re.fullmatch(
+                r"data:image/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=\s]+)",
+                data_url,
+                flags=re.I,
+            )
+            if not matched:
+                raise RuntimeError("请选择 PNG、JPG 或 WebP 图片")
+            encoded = re.sub(r"\s+", "", matched.group(1))
+            if len(encoded) > 12 * 1024 * 1024:
+                raise RuntimeError("背景图片过大，请控制在 8MB 以内")
+            try:
+                raw = base64.b64decode(encoded, validate=True)
+            except ValueError as exc:
+                raise RuntimeError("背景图片编码无效") from exc
+            if len(raw) > 8 * 1024 * 1024:
+                raise RuntimeError("背景图片过大，请控制在 8MB 以内")
+            try:
+                with Image.open(BytesIO(raw)) as source:
+                    source.load()
+                    normalized = ImageOps.fit(
+                        source.convert("RGB"),
+                        (1080, 1440),
+                        method=Image.Resampling.LANCZOS,
+                        centering=(0.5, 0.5),
+                    )
+            except Exception as exc:
+                raise RuntimeError("无法读取背景图片") from exc
+
+            output_dir = Path(self.data_dir) / "weather_templates"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            digest = sha1(raw).hexdigest()[:12]
+            output_path = output_dir / f"weather_template_{datetime.now():%Y%m%d_%H%M%S}_{digest}.png"
+            normalized.save(output_path, "PNG", optimize=True)
+            files = sorted(output_dir.glob("weather_template_*.png"), key=lambda path: path.stat().st_mtime, reverse=True)
+            for stale_path in files[5:]:
+                try:
+                    stale_path.unlink()
+                except OSError:
+                    pass
+
+            weather = self.config.setdefault("weather_conf", {})
+            weather["template_path"] = str(output_path)
+            self.weather_conf = weather
+            self.weather_renderer.update_config(weather)
+            await self._save_config_file()
+            return {
+                "ok": True,
+                "data": {
+                    "template_path": str(output_path),
+                    "width": 1080,
+                    "height": 1440,
+                },
+                "message": "天气背景已上传",
             }
 
         return await self._page_json(handler)

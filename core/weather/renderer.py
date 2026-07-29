@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 class WeatherRenderer:
@@ -67,7 +67,12 @@ class WeatherRenderer:
         template_path = str(self.config.get("template_path", "") or "").strip()
         if template_path and Path(template_path).is_file():
             with Image.open(template_path) as template:
-                return template.convert("RGB").resize((self.WIDTH, self.HEIGHT), Image.Resampling.LANCZOS)
+                return ImageOps.fit(
+                    template.convert("RGB"),
+                    (self.WIDTH, self.HEIGHT),
+                    method=Image.Resampling.LANCZOS,
+                    centering=(0.5, 0.5),
+                )
 
         image = Image.new("RGB", (self.WIDTH, self.HEIGHT), (231, 244, 250))
         draw = ImageDraw.Draw(image)

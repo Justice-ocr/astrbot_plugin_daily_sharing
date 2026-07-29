@@ -56,9 +56,6 @@ class DashboardConfigPayloadMixin:
                 "weather": {
                     "enabled": bool(weather.get("enabled", False)),
                     "rules": str(weather.get("rules", "") or ""),
-                    "provider": str(weather.get("provider", "auto") or "auto"),
-                    "provider_order": list(weather.get("provider_order") or ["grok", "astrbot", "anysearch"]),
-                    "astrbot_tool_name": str(weather.get("astrbot_tool_name", "web_search_tavily") or "web_search_tavily"),
                     "search_timeout_seconds": int(weather.get("search_timeout_seconds", 60) or 60),
                     "normalize_timeout_seconds": int(weather.get("normalize_timeout_seconds", 90) or 90),
                     "cache_minutes": int(weather.get("cache_minutes", 30) or 30),

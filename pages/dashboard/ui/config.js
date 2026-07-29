@@ -32,6 +32,194 @@ export function createSettingsConfig({
       .filter(Boolean);
   }
 
+  function parseWeatherRules(value) {
+    return linesToArray(value).map((line) => {
+      const [target = "", location = "", cron = "0 8 * * *", timezone = "Asia/Shanghai"] = line
+        .split("|")
+        .map((item) => item.trim());
+      const parts = cron.split(/\s+/).filter(Boolean);
+      const isDailyTime = parts.length === 5
+        && parts[2] === "*"
+        && parts[3] === "*"
+        && parts[4] === "*"
+        && /^\d{1,2}$/.test(parts[0])
+        && /^\d{1,2}$/.test(parts[1]);
+      const hour = Number(parts[1]);
+      const minute = Number(parts[0]);
+      return {
+        target,
+        location,
+        timezone,
+        mode: isDailyTime && hour <= 23 && minute <= 59 ? "daily" : "cron",
+        time: isDailyTime && hour <= 23 && minute <= 59
+          ? `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+          : "08:00",
+        cron,
+      };
+    });
+  }
+
+  function weatherField(labelText, className, control) {
+    const label = document.createElement("label");
+    label.className = `weather-rule-field ${className || ""}`.trim();
+    const title = document.createElement("span");
+    title.textContent = labelText;
+    label.append(title, control);
+    return label;
+  }
+
+  function syncWeatherRuleMode(row) {
+    const mode = row.querySelector("[data-weather-field='mode']")?.value || "daily";
+    const timeField = row.querySelector("[data-weather-field='time']")?.closest("label");
+    const advanced = row.querySelector(".weather-rule-advanced");
+    if (timeField) timeField.hidden = mode !== "daily";
+    if (advanced) advanced.hidden = mode !== "cron";
+  }
+
+  function createWeatherRuleRow(rule = {}) {
+    const row = document.createElement("article");
+    row.className = "weather-rule-item";
+
+    const head = document.createElement("div");
+    head.className = "weather-rule-item-head";
+    const title = document.createElement("strong");
+    title.textContent = "天气用户";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button danger-button";
+    remove.textContent = "删除";
+    remove.addEventListener("click", () => {
+      row.remove();
+      handleConfigChanged({ type: "change", target: el.weatherRuleList });
+    });
+    head.append(title, remove);
+
+    const target = document.createElement("input");
+    target.type = "text";
+    target.placeholder = "用户 ID 或完整 UMO";
+    target.value = rule.target || "";
+    target.dataset.weatherField = "target";
+
+    const location = document.createElement("input");
+    location.type = "text";
+    location.placeholder = "例如：香港沙田";
+    location.value = rule.location || "";
+    location.dataset.weatherField = "location";
+
+    const mode = document.createElement("select");
+    mode.dataset.weatherField = "mode";
+    mode.append(new Option("每天定时", "daily"), new Option("高级 Cron", "cron"));
+    mode.value = rule.mode === "cron" ? "cron" : "daily";
+    mode.addEventListener("change", () => syncWeatherRuleMode(row));
+
+    const time = document.createElement("input");
+    time.type = "time";
+    time.value = rule.time || "08:00";
+    time.dataset.weatherField = "time";
+
+    const timezone = document.createElement("input");
+    timezone.type = "text";
+    timezone.setAttribute("list", "weatherTimezoneOptions");
+    timezone.placeholder = "Asia/Shanghai";
+    timezone.value = rule.timezone || "Asia/Shanghai";
+    timezone.dataset.weatherField = "timezone";
+
+    const cron = document.createElement("input");
+    cron.type = "text";
+    cron.placeholder = "0 8 * * *";
+    cron.value = rule.cron || "0 8 * * *";
+    cron.dataset.weatherField = "cron";
+    const advanced = weatherField("Cron", "weather-rule-field-wide weather-rule-advanced", cron);
+
+    row.append(
+      head,
+      weatherField("接收对象", "weather-rule-field-wide", target),
+      weatherField("地点", "", location),
+      weatherField("计划", "", mode),
+      weatherField("每天时间", "", time),
+      weatherField("时区", "weather-rule-field-wide", timezone),
+      advanced,
+    );
+    syncWeatherRuleMode(row);
+    return row;
+  }
+
+  function renderWeatherRules(value) {
+    if (!el.weatherRuleList) return;
+    el.weatherRuleList.replaceChildren(...parseWeatherRules(value).map(createWeatherRuleRow));
+  }
+
+  function collectWeatherRules() {
+    const rules = [];
+    for (const row of el.weatherRuleList?.querySelectorAll(".weather-rule-item") || []) {
+      const get = (name) => text(row.querySelector(`[data-weather-field='${name}']`)?.value).trim();
+      const target = get("target");
+      const location = get("location");
+      const timezone = get("timezone");
+      const mode = get("mode");
+      const time = get("time") || "08:00";
+      const cron = mode === "cron"
+        ? get("cron")
+        : `${Number(time.slice(3, 5))} ${Number(time.slice(0, 2))} * * *`;
+      if (target && location) {
+        rules.push(`${target} | ${location} | ${cron} | ${timezone}`);
+      }
+    }
+    return rules.join("\n");
+  }
+
+  function setWeatherTemplatePreview(source = "", meta = "") {
+    if (el.weatherTemplatePreview) {
+      el.weatherTemplatePreview.hidden = !source;
+      el.weatherTemplatePreview.src = source || "";
+    }
+    if (el.weatherTemplateMeta) el.weatherTemplateMeta.textContent = meta || "未上传，使用内置背景";
+  }
+
+  async function uploadWeatherTemplate(file) {
+    if (!file || !bridge) return;
+    if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
+      setNotice("请选择 PNG、JPG 或 WebP 图片。", "error");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setNotice("背景图片不能超过 8MB。", "error");
+      return;
+    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("读取背景图片失败"));
+      reader.readAsDataURL(file);
+    });
+    if (el.weatherTemplateUploadButton) el.weatherTemplateUploadButton.disabled = true;
+    try {
+      const result = await apiPost("page/weather/template", { data_url: dataUrl });
+      setInputValue(el.cfgWeatherTemplatePath, result.template_path || "");
+      if (state.configData?.sections?.weather) {
+        state.configData.sections.weather.template_path = result.template_path || "";
+      }
+      setWeatherTemplatePreview(dataUrl, `${file.name} · 已裁切为 1080 × 1440`);
+      setNotice("天气背景已上传。", "success");
+    } catch (error) {
+      setNotice(error.message || "背景上传失败", "error");
+    } finally {
+      if (el.weatherTemplateUploadButton) el.weatherTemplateUploadButton.disabled = false;
+      if (el.cfgWeatherTemplateFile) el.cfgWeatherTemplateFile.value = "";
+    }
+  }
+
+  function bindWeatherEvents() {
+    el.weatherAddRuleButton?.addEventListener("click", () => {
+      el.weatherRuleList?.append(createWeatherRuleRow({ timezone: "Asia/Shanghai" }));
+      handleConfigChanged({ type: "change", target: el.weatherRuleList });
+    });
+    el.weatherTemplateUploadButton?.addEventListener("click", () => el.cfgWeatherTemplateFile?.click());
+    el.cfgWeatherTemplateFile?.addEventListener("change", () => {
+      void uploadWeatherTemplate(el.cfgWeatherTemplateFile.files?.[0]);
+    });
+  }
+
   function setInputValue(input, value) {
     if (!input) return;
     input.value = value ?? "";
@@ -335,13 +523,12 @@ export function createSettingsConfig({
 
     setInputChecked(el.cfgWeatherEnabled, weather.enabled);
     setInputValue(el.cfgWeatherRules, weather.rules || "");
-    setInputValue(el.cfgWeatherProvider, weather.provider || "auto");
-    setInputValue(el.cfgWeatherProviderOrder, arrayToLines(weather.provider_order));
-    setInputValue(el.cfgWeatherAstrbotTool, weather.astrbot_tool_name || "web_search_tavily");
+    renderWeatherRules(weather.rules || "");
     setInputValue(el.cfgWeatherSearchTimeout, weather.search_timeout_seconds ?? 60);
     setInputValue(el.cfgWeatherNormalizeTimeout, weather.normalize_timeout_seconds ?? 90);
     setInputValue(el.cfgWeatherCacheMinutes, weather.cache_minutes ?? 30);
     setInputValue(el.cfgWeatherTemplatePath, weather.template_path || "");
+    setWeatherTemplatePreview("", weather.template_path ? `已使用上传模板：${weather.template_path.split(/[\\/]/).pop()}` : "未上传，使用内置背景");
     setInputValue(el.cfgWeatherFontPath, weather.font_path || "");
     setInputValue(el.cfgWeatherCleanupMax, weather.cleanup_max_count ?? 60);
 
@@ -493,10 +680,7 @@ export function createSettingsConfig({
         },
         weather: {
           enabled: Boolean(el.cfgWeatherEnabled?.checked),
-          rules: text(el.cfgWeatherRules?.value).trim(),
-          provider: el.cfgWeatherProvider?.value || "auto",
-          provider_order: linesToArray(el.cfgWeatherProviderOrder?.value),
-          astrbot_tool_name: text(el.cfgWeatherAstrbotTool?.value).trim() || "web_search_tavily",
+          rules: collectWeatherRules(),
           search_timeout_seconds: numberValue(el.cfgWeatherSearchTimeout, 60),
           normalize_timeout_seconds: numberValue(el.cfgWeatherNormalizeTimeout, 90),
           cache_minutes: numberValue(el.cfgWeatherCacheMinutes, 30),
@@ -751,6 +935,7 @@ export function createSettingsConfig({
   }
 
   return {
+    bindWeatherEvents,
     bindProviderProbeEvents,
     handleConfigChanged,
     loadConfig,

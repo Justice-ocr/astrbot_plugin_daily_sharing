@@ -114,18 +114,7 @@ class DashboardConfigApplyMixin:
             rules_text = self._page_clean_text(weather_body.get("rules"), max_len=20000)
             parse_weather_rules(rules_text, strict=True)
             weather["rules"] = rules_text
-        if "provider" in weather_body:
-            weather["provider"] = self._page_choice_value(
-                weather_body.get("provider"),
-                {"auto", "astrbot", "anysearch", "grok"},
-                "auto",
-                "天气搜索来源",
-            )
-        if "provider_order" in weather_body:
-            weather["provider_order"] = self._page_list_value(
-                weather_body.get("provider_order"), max_items=20, item_max_len=100
-            )
-        for key in ("astrbot_tool_name", "template_path", "font_path"):
+        for key in ("template_path", "font_path"):
             if key in weather_body:
                 weather[key] = self._page_clean_text(weather_body.get(key), max_len=1000)
         for key, default, minimum, maximum in (

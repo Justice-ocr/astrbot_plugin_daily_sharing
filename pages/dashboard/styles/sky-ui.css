@@ -1021,6 +1021,109 @@ h3 {
   gap: 10px;
 }
 
+.weather-rule-editor,
+.weather-template-upload {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid rgba(83, 141, 199, 0.14);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.weather-rule-editor {
+  padding: 14px;
+}
+
+.weather-rule-editor .settings-target-head {
+  margin-bottom: 12px;
+}
+
+.weather-rule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.weather-rule-item {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(83, 141, 199, 0.14);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.weather-rule-item-head,
+.weather-rule-field-wide,
+.weather-rule-advanced {
+  grid-column: 1 / -1;
+}
+
+.weather-rule-item-head,
+.weather-template-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weather-rule-item-head strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.weather-rule-field {
+  grid-column: span 4;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.weather-rule-field > span,
+.weather-template-upload > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.weather-rule-field input,
+.weather-rule-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.weather-rule-advanced[hidden] {
+  display: none;
+}
+
+.weather-template-upload {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.weather-template-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.weather-template-meta {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.weather-template-preview {
+  display: block;
+  width: min(220px, 100%);
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border: 1px solid rgba(83, 141, 199, 0.2);
+  border-radius: var(--radius);
+}
+
 .icon-button.small {
   min-width: 34px;
   width: 34px;
@@ -1458,8 +1561,13 @@ html[data-view-ready="true"] .page-boot-loader {
   }
 
   .target-schema-guide,
-  .target-fields {
+  .target-fields,
+  .weather-rule-item {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .weather-rule-field {
+    grid-column: 1 / -1;
   }
 
   .settings-target-head {

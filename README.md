@@ -129,8 +129,8 @@
 
 - 每条规则可使用不同地点、Cron 和 IANA 时区；Cron 支持 5、6、7 段格式。
 - 纯用户 ID 会按默认平台作为私聊目标；天气规则也接受完整 UMO，适合显式指定平台。
-- 搜索来源可选择 AstrBot 内置搜索、[`astrbot_plugin_anysearch`](https://github.com/AgIzT/astrbot_plugin_anysearch) 或 [`astrbot_plugin_grok_web_search`](https://github.com/piexian/astrbot_plugin_grok_web_search)，`auto` 模式会在来源失败、超时或数据校验不通过时依次回退。
-- 内置背景可直接使用；也可通过 `template_path` 指定一张 `1080x1440` PNG/JPG。模板应保留中央和底部的低纹理文字区域，不要预先绘制文字、数字、天气图标或水印。
+- 搜索会自动使用 AstrBot 当前启用的默认网页搜索提供商；不需要在插件里重复选择工具。原始搜索内容会由模型整理成天气字段，再由本地校验日期、地点和数值范围。
+- 内置背景可直接使用；也可在仪表盘上传 PNG/JPG/WebP，服务端会裁切为 `1080x1440` 并保存为当前模板。模板应保留中央和底部的低纹理文字区域，不要预先绘制文字、数字、天气图标或水印。
 - 仪表盘“手动触发 → 天气”会立即执行并发送第一条规则，可用于上线前验证搜索、渲染和主动发送链路。
 
 ---
@@ -256,7 +256,7 @@ default:FriendMessage:o2cq508wSbYFvbrV5tnC29LoU3NU@im.wechat
 | 配置分组 | 说明 |
 | :--- | :--- |
 | `enable_auto_sharing` | 普通每日分享总开关，不影响独立天气任务。 |
-| `weather_conf` | 每日天气开关、用户/地点/Cron/时区规则、搜索回退和图片模板。 |
+| `weather_conf` | 每日天气开关、用户/地点/Cron/时区规则、AstrBot 默认搜索和图片模板。 |
 | `receiver` | 群聊、私聊接收目标，以及独立定时、独立分享类型序列。 |
 | `contact_aliases` | 本地用户称呼映射，用于补充平台无法稳定获取的称呼。 |
 | `content_library` | 知识库、推荐库和类型前缀显示开关。 |
