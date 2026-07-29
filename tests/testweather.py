@@ -191,9 +191,11 @@ class _FakeTool:
         self.result = result
         self.error = error
         self.calls = 0
+        self.queries = []
 
     async def run(self, **kwargs):
         self.calls += 1
+        self.queries.append(kwargs.get("query", ""))
         if self.error:
             raise self.error
         return self.result
@@ -224,6 +226,29 @@ class WeatherServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(result, cached)
         self.assertEqual(1, first.calls)
         self.assertEqual(1, second.calls)
+
+    async def test_requeries_when_first_result_is_incomplete(self):
+        tool = _FakeTool("web_search_tavily", result="weather search result")
+        adapter = _FakeAdapter({tool.name: tool})
+        context = SimpleNamespace(
+            get_config=lambda: {"provider_settings": {"websearch_provider": "tavily"}},
+            get_llm_tool_manager=lambda: SimpleNamespace(func_list=[tool]),
+        )
+        responses = iter([
+            json.dumps({"error": "缺少未来预报和体感温度"}, ensure_ascii=False),
+            json.dumps(sample_weather(), ensure_ascii=False),
+        ])
+
+        async def llm(prompt, **kwargs):
+            return next(responses)
+
+        service = WeatherService(context, {}, llm, adapter)
+        result = await service.get_weather("香港沙田", "Asia/Hong_Kong", now=NOW)
+
+        self.assertEqual("AstrBot · web_search_tavily", result["provider"])
+        self.assertEqual(2, tool.calls)
+        self.assertIn("2026-07-28、2026-07-29、2026-07-30、2026-07-31", tool.queries[0])
+        self.assertIn("缺少未来预报和体感温度", tool.queries[1])
 
 
 class WeatherSchedulerTests(unittest.TestCase):
